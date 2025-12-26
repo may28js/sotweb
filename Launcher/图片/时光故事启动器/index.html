@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>时光故事 - 史诗怀旧 3.3.5a</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+      .font-epic { font-family: 'Cinzel', serif; }
+      ::-webkit-scrollbar { width: 10px; }
+      ::-webkit-scrollbar-track { background: #0a0510; }
+      ::-webkit-scrollbar-thumb {
+        background: linear-gradient(to bottom, #b45309, #451a03);
+        border-radius: 5px;
+      }
+      body {
+        background-color: #050308;
+        color: #e2e8f0;
+        font-family: 'Microsoft YaHei', sans-serif;
+        overflow-x: hidden;
+      }
+      .text-glow-gold {
+        text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+      }
+      .ornament-border {
+        border: 2px solid;
+        border-image: linear-gradient(to bottom, #b45309, #78350f, #b45309) 1;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

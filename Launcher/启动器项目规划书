@@ -1,0 +1,75 @@
+时光故事 · 项目规划书
+Story of Time Project Specification & Roadmap
+
+当前版本: Alpha 0.5.0
+最后更新: 2024-12-16
+
+项目概述
+本项目旨在构建一个现代化的、沉浸式的《魔兽世界》3.3.5a 版本专用启动器。 区别于传统的登录器，我们致力于通过极具视觉冲击力的 UI/UX 设计和高效的资源分发技术， 为玩家提供从“下载”到“进入艾泽拉斯”的无缝体验。
+
+零门槛接入
+自动定位游戏路径，一键环境配置，无需玩家手动修改 Realmlist。
+
+低成本分发
+采用 P2P + HTTP 混合模式，大幅降低服务器带宽压力。
+
+沉浸式社区
+集成新闻资讯、服务器状态监控与商城入口，增强用户粘性。
+
+视觉与交互设计规范
+界面风格：时光魔法
+主色调: 深邃虚空紫 (#0f0518) 与 魔法琥珀金 (Amber-400/500)。
+强调色: 青色 (Cyan) 用于高亮操作与能量流动效果，象征时光流动。
+材质: 玻璃拟态 (Glassmorphism)，半透明背景与高斯模糊，营造空间感。
+交互动效
+粒子背景: HTML5 Canvas 实现的“时间隧道”粒子穿梭效果，随窗口大小自适应。
+无边框窗口: 模拟原生应用的拖拽区与窗口控制，提供沉浸式全屏体验。
+微交互: 按钮悬停光效、进度条脉冲动画、卡片上浮效果。
+技术架构与实现
+Frontend Presentation
+React 19 + TypeScript + Tailwind
+
+负责所有 UI 渲染、动画、状态管理及用户交互。通过 window.chrome.webview 与宿主通信。
+
+Host Application
+C# .NET / WebView2 (WinUI 3)
+
+提供原生系统能力：文件读写、注册表访问、进程管理、以及 P2P 下载引擎的宿主环境。
+
+Backend Services
+Nginx (Static) + WordPress (API)
+
+VPS 托管静态补丁文件 (MPQ) 和 Version Manifest；WordPress 提供账号验证与新闻接口。
+
+混合分发策略 (Hybrid Distribution)
+Part A: 完整客户端 (15GB+)
+BitTorrent 协议
+利用 MonoTorrent 库在客户端内集成下载核心。通过磁力链接分发基础客户端。
+
+优势：带宽成本为 0，下载速度随用户数量增加而提升。
+实现：官方作为初始种子 (Seed)，玩家下载时自动做种。
+Part B: 补丁与热更 (10MB - 500MB)
+HTTP/HTTPS
+基于 MD5 校验的文件差异更新。直接从 VPS Nginx 服务器下载 MPQ 补丁文件。
+
+优势：速度稳定，可控性强，适合频繁的小型修改。
+实现：启动时请求 manifest.json 对比本地文件 Hash。
+开发实施路线图
+阶段一：原型与UI架构 
+v0.1 - v0.5
+搭建 React + Vite + Tailwind 项目骨架。
+完成高保真 UI 设计 (暗黑魔法风格)。
+实现前端路由、新闻展示、以及模拟下载逻辑。
+集成 WebView2 通信接口定义。
+
+阶段二：宿主集成与核心功能
+v0.6 - v0.9
+构建 C# WPF/WinUI 3 宿主程序。
+接入 MonoTorrent 库实现真实 P2P 下载。
+实现文件完整性校验 (MD5 Checksum)。
+编写自动修改 Realmlist.wtf 的逻辑。
+阶段三：数据互通与生态
+v1.0 Release
+接入 AzerothCore 账号数据库，实现启动器内注册/改密。
+集成商城 API，展示点数与购买记录。
+增加插件 (AddOns) 管理器功能。
