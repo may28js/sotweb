@@ -449,7 +449,7 @@ export default function BuyPage() {
                                         <span className="text-gray-500 text-xs uppercase tracking-widest font-bold">总计</span>
                                         <div className="flex items-center gap-1.5 text-black">
                                             <span className="text-2xl font-black tracking-tight">{totalPrice}</span>
-                                            <TimeFragment iconOnly iconSize={20} className="text-yellow-600" />
+                                            <TimeFragment iconSize={20} className="text-yellow-600" />
                                         </div>
                                     </div>
                                 </div>
