@@ -60,7 +60,7 @@ namespace StoryOfTime.Server.Controllers
             var accessLevelClaim = User.FindFirst("AccessLevel");
             Console.WriteLine($"[POST News] User Claims: {string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
 
-            if (accessLevelClaim == null || int.Parse(accessLevelClaim.Value) < 1)
+            if (accessLevelClaim == null || !int.TryParse(accessLevelClaim.Value, out int level) || level < StoryOfTime.Server.Models.User.Level_Moderator)
             {
                 Console.WriteLine("[POST News] Access Denied: Insufficient AccessLevel.");
                 return Forbid();
@@ -111,7 +111,7 @@ namespace StoryOfTime.Server.Controllers
 
             // Check Access Level
             var accessLevelClaim = User.FindFirst("AccessLevel");
-            if (accessLevelClaim == null || int.Parse(accessLevelClaim.Value) < 1)
+            if (accessLevelClaim == null || !int.TryParse(accessLevelClaim.Value, out int level) || level < StoryOfTime.Server.Models.User.Level_Moderator)
             {
                 return Forbid();
             }
@@ -169,7 +169,7 @@ namespace StoryOfTime.Server.Controllers
         {
             // Check Access Level
             var accessLevelClaim = User.FindFirst("AccessLevel");
-            if (accessLevelClaim == null || int.Parse(accessLevelClaim.Value) < 1)
+            if (accessLevelClaim == null || !int.TryParse(accessLevelClaim.Value, out int level) || level < StoryOfTime.Server.Models.User.Level_Moderator)
             {
                 return Forbid();
             }

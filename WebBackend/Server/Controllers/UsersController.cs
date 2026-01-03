@@ -24,7 +24,7 @@ namespace StoryOfTime.Server.Controllers
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
             var accessLevelClaim = User.FindFirst("AccessLevel");
-            if (accessLevelClaim == null || int.Parse(accessLevelClaim.Value) < 1)
+            if (accessLevelClaim == null || !int.TryParse(accessLevelClaim.Value, out int level) || level < StoryOfTime.Server.Models.User.Level_Moderator)
             {
                 return Forbid();
             }
@@ -44,7 +44,10 @@ namespace StoryOfTime.Server.Controllers
         public async Task<IActionResult> ChangeAccessLevel(int id, [FromBody] int newLevel)
         {
             var accessLevelClaim = User.FindFirst("AccessLevel");
-            if (accessLevelClaim == null || int.Parse(accessLevelClaim.Value) < 1) // Allow Moderators (Level 1+)
+            if (accessLevelClaim == null || !int.TryParse(accessLevelClaim.Value, out int level)) return Forbid();
+
+            // Only Owner (Level 4) can change access levels
+            if (level != StoryOfTime.Server.Models.User.Level_Owner)
             {
                 return Forbid();
             }
@@ -63,7 +66,10 @@ namespace StoryOfTime.Server.Controllers
         public async Task<IActionResult> ModifyPoints(int id, [FromBody] decimal amount)
         {
             var accessLevelClaim = User.FindFirst("AccessLevel");
-            if (accessLevelClaim == null || int.Parse(accessLevelClaim.Value) < 1) // Allow Moderators (Level 1+)
+            if (accessLevelClaim == null || !int.TryParse(accessLevelClaim.Value, out int level)) return Forbid();
+
+            // Only Admin (Level 2) or Owner (Level 4) can modify points
+            if (level != StoryOfTime.Server.Models.User.Level_Admin && level != StoryOfTime.Server.Models.User.Level_Owner)
             {
                 return Forbid();
             }

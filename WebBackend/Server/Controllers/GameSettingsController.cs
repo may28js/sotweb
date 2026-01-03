@@ -22,9 +22,14 @@ namespace StoryOfTime.Server.Controllers
         [HttpGet]
         public async Task<ActionResult<GameServerSetting>> GetSettings()
         {
-            // Check Access Level (Admin only)
+            // Check Access Level (Admin or Owner only)
             var accessLevelClaim = User.FindFirst("AccessLevel");
-            if (accessLevelClaim == null || int.Parse(accessLevelClaim.Value) < 10)
+            if (accessLevelClaim == null || !int.TryParse(accessLevelClaim.Value, out int level))
+            {
+                return Forbid();
+            }
+
+            if (level != StoryOfTime.Server.Models.User.Level_Admin && level != StoryOfTime.Server.Models.User.Level_Owner)
             {
                 return Forbid();
             }
@@ -47,9 +52,14 @@ namespace StoryOfTime.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<GameServerSetting>> SaveSettings(GameServerSetting settings)
         {
-            // Check Access Level (Admin only)
+            // Check Access Level (Admin or Owner only)
             var accessLevelClaim = User.FindFirst("AccessLevel");
-            if (accessLevelClaim == null || int.Parse(accessLevelClaim.Value) < 10)
+            if (accessLevelClaim == null || !int.TryParse(accessLevelClaim.Value, out int level))
+            {
+                return Forbid();
+            }
+
+            if (level != StoryOfTime.Server.Models.User.Level_Admin && level != StoryOfTime.Server.Models.User.Level_Owner)
             {
                 return Forbid();
             }
