@@ -9,7 +9,7 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Data Source=/app/data/storyoftime.db
-      - OwnerSettings__InitialOwnerUsername=admin
+      - OwnerSettings__InitialOwnerUsername=sotmay
       # If you use MySQL in the future, add connection strings here
       # - ConnectionStrings__AuthConnection=...
     volumes:
