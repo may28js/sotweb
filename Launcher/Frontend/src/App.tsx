@@ -5,10 +5,8 @@ import {
   Ghost, 
   Shield, 
   Settings,
-  Bell, 
   Minus, 
   X,
-  Clock,
   FolderSearch,
   ChevronUp,
   ShoppingBag,
@@ -32,9 +30,9 @@ function App() {
   const [progress, setProgress] = useState(0); // 0-100
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [isLocalInstall, setIsLocalInstall] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [installPath, setInstallPath] = useState<string | null>(null);
+  const [downloadSpeed, setDownloadSpeed] = useState('0 KB/s');
 
   // IPC Handling
   useEffect(() => {
@@ -47,12 +45,13 @@ function App() {
                 switch (message.type) {
                     case 'game_status':
                          // Reset progress on status change
-                         setProgress(0);
+                         if (message.payload.status !== 'installing' && message.payload.status !== 'updating') {
+                             setProgress(0);
+                         }
                          if (message.payload.path) setInstallPath(message.payload.path);
 
                          if (message.payload.status === 'ready') {
                              setGameStatus('ready');
-                             setIsLocalInstall(true); // Assuming found locally
                          } else if (message.payload.status === 'not_installed') {
                              setGameStatus('not_installed');
                          }
@@ -60,6 +59,20 @@ function App() {
                     case 'game_launched':
                         setGameStatus('playing');
                         setTimeout(() => setGameStatus('ready'), 5000);
+                        break;
+                    case 'download_progress':
+                        setGameStatus('installing');
+                        setProgress(message.payload.progress);
+                        if (message.payload.speed) setDownloadSpeed(message.payload.speed);
+                        break;
+                    case 'download_complete':
+                        setGameStatus('ready');
+                        setProgress(100);
+                        setIsPaused(false);
+                        break;
+                    case 'download_error':
+                        console.error("Download Error:", message.payload);
+                        setIsPaused(true);
                         break;
                     case 'error':
                         console.error("IPC Error:", message.payload);
@@ -99,36 +112,23 @@ function App() {
     }
   };
 
-  const startInstallSimulation = (isLocalCopy: boolean) => {
-      // This is now mainly for the "Bubble" prompt logic if used
-      // But real logic should go through IPC
-      setShowInstallPrompt(false);
-      // @ts-ignore
-      if (window.chrome?.webview) {
-         // @ts-ignore
-         window.chrome.webview.postMessage({ type: 'select_install_path' });
-      } else {
-        setIsLocalInstall(isLocalCopy);
-        setGameStatus('installing');
-        setProgress(0);
-        setIsPaused(false);
-      }
-  };
-
   // Real function to trigger actions
    const handleGameAction = () => {
      // @ts-ignore
      if (window.chrome?.webview) {
          if (gameStatus === 'not_installed') {
-            if (installPath) {
-                // If path is set but not installed, start installation/download
-                // For now, we simulate this as we haven't built the download service yet
-                setGameStatus('installing');
-                // In future: window.chrome.webview.postMessage({ type: 'start_install' });
-            } else {
-                setShowInstallPrompt(true);
-            }
-         } else if (gameStatus === 'ready') {
+           if (installPath) {
+               // If path is set but not installed, start installation/download
+               // Immediate feedback
+               setGameStatus('installing');
+               setProgress(0);
+               
+               // @ts-ignore
+               window.chrome.webview.postMessage({ type: 'start_download' });
+           } else {
+               setShowInstallPrompt(true);
+           }
+        } else if (gameStatus === 'ready') {
              // @ts-ignore
              window.chrome.webview.postMessage({ type: 'launch_game' });
          }
@@ -140,6 +140,20 @@ function App() {
             setGameStatus('playing');
             setTimeout(() => setGameStatus('ready'), 3000); 
         }
+    }
+  };
+
+  const togglePause = () => {
+    if (isPaused) {
+        // Resume
+        // @ts-ignore
+        if (window.chrome?.webview) window.chrome.webview.postMessage({ type: 'resume_download' });
+        setIsPaused(false);
+    } else {
+        // Pause
+        // @ts-ignore
+        if (window.chrome?.webview) window.chrome.webview.postMessage({ type: 'pause_download' });
+        setIsPaused(true);
     }
   };
 
@@ -342,14 +356,12 @@ function App() {
                                     <span className="text-amber-500/80">已暂停</span>
                                 ) : (
                                     <>
-                                        <span>{gameStatus === 'installing' ? '正在安装游戏文件...' : '正在校验游戏补丁...'}</span>
-                                        <span className="text-gray-600">|</span>
-                                        <span className="text-gray-500">预计剩余时间: {Math.round((100 - progress) * 2)} 秒</span>
+                                        <span>{gameStatus === 'installing' ? '正在下载游戏客户端...' : '正在校验游戏补丁...'}</span>
                                     </>
                                 )}
                             </span>
                             <div className="flex items-center gap-2 text-[10px] font-mono text-amber-500/80">
-                                <span>{isPaused ? '0 KB/s' : (isLocalInstall ? '45.2 MB/s' : '5.2 MB/s')}</span>
+                                <span>{isPaused ? '0 KB/s' : downloadSpeed}</span>
                                 <span className="text-white/30">|</span>
                                 <span>{Math.round(progress)}%</span>
                             </div>
@@ -358,7 +370,7 @@ function App() {
                     
                     {/* Pause/Resume Button */}
                     <button 
-                        onClick={() => setIsPaused(!isPaused)}
+                        onClick={togglePause}
                         className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-amber-500 border border-white/5 hover:border-amber-500/30 transition-all active:scale-95 shadow-lg"
                     >
                         {isPaused ? <Play size={14} className="ml-0.5" /> : <Pause size={14} />}
@@ -371,25 +383,37 @@ function App() {
           <div className="relative">
              {/* Install Prompt Bubble */}
              {showInstallPrompt && (
-                <div className="absolute bottom-full right-0 mb-4 w-80 bg-[#1a1120] border border-amber-500/30 rounded-xl p-4 shadow-2xl shadow-black/50 animate-in slide-in-from-bottom-2 fade-in duration-300 z-50">
+                <div className="absolute bottom-full right-0 mb-4 w-96 bg-[#1a1120] border border-amber-500/30 rounded-xl p-4 shadow-2xl shadow-black/50 animate-in slide-in-from-bottom-2 fade-in duration-300 z-50">
                     <div className="absolute -bottom-2 right-12 w-4 h-4 bg-[#1a1120] border-b border-r border-amber-500/30 transform rotate-45"></div>
                     <div className="flex items-start gap-3 mb-3">
                         <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
                             <FolderSearch size={20} />
                         </div>
                         <p className="text-sm text-gray-300 leading-relaxed">
-                            检测到您的电脑上已安装有游戏客户端，是否直接使用？这会为您节省大量下载时间。
+                            如果您的电脑上已经有客户端，那么选择“是”，在您定位客户端路径后将使用已有的游戏。 选择“否”则通过网络下载游戏客户端，这将会花一些时间。
                         </p>
                     </div>
                     <div className="flex gap-2">
                         <button 
-                            onClick={() => startInstallSimulation(true)}
+                            onClick={() => {
+                                setShowInstallPrompt(false);
+                                // @ts-ignore
+                                if (window.chrome?.webview) window.chrome.webview.postMessage({ type: 'select_install_path' });
+                            }}
                             className="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium py-1.5 rounded transition-colors"
                         >
                             是
                         </button>
                         <button 
-                            onClick={() => startInstallSimulation(false)}
+                            onClick={() => {
+                                setShowInstallPrompt(false);
+                                // @ts-ignore
+                                if (window.chrome?.webview) window.chrome.webview.postMessage({ type: 'install_game' });
+                                
+                                // Update UI immediately to avoid "Start Install" appearing
+                                setGameStatus('installing');
+                                setProgress(0);
+                            }}
                             className="flex-1 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-sm font-medium py-1.5 rounded transition-colors"
                         >
                             否
@@ -410,7 +434,7 @@ function App() {
                 disabled={gameStatus === 'installing' || gameStatus === 'updating'}
               >
                  <span className="tracking-wide">
-                    {gameStatus === 'not_installed' && !installPath && '下载游戏'}
+                    {gameStatus === 'not_installed' && !installPath && '安装游戏'}
                     {gameStatus === 'not_installed' && installPath && '开始安装'}
                     {gameStatus === 'installing' && '安装中...'}
                     {gameStatus === 'updating' && '更新中...'}
@@ -454,15 +478,6 @@ const TopNavLink = ({ label, active, onClick }: { label: string, active?: boolea
       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 shadow-[0_-2px_8px_rgba(245,158,11,0.5)]"></div>
     )}
   </div>
-);
-
-const WindowControl = ({ icon, hoverColor = "hover:text-white", onClick }: { icon: React.ReactNode, hoverColor?: string, onClick?: () => void }) => (
-  <button 
-    className={`text-gray-500 transition-colors p-2 rounded hover:bg-white/10 ${hoverColor}`}
-    onClick={onClick}
-  >
-    {icon}
-  </button>
 );
 
 const PatchNote = ({ version, date, content, highlight }: { version: string, date: string, content: string, highlight?: boolean }) => (
@@ -589,19 +604,25 @@ const ShopCard = ({ item }: { item: ShopItem }) => (
 
 const GamePage = () => (
   <>
-    {/* Hero Section - Replaced by Alert Banner */}
-    <div className="mb-8 bg-[#1a1a1a] rounded overflow-hidden border border-white/5 flex shadow-lg min-h-[80px]">
-       {/* Icon Area */}
-       <div className="w-16 flex items-center justify-center bg-[#2a2a2a]">
-          <TriangleAlert className="text-amber-500" size={28} />
+    {/* Hero Section - Notification Bar */}
+    <div className="mb-8 flex h-10 w-full rounded overflow-hidden shadow-lg cursor-pointer group hover:scale-[1.01] transition-transform">
+       {/* Left Icon Area - Yellow */}
+       <div className="bg-amber-500 w-10 flex items-center justify-center text-black shrink-0">
+          <TriangleAlert size={18} className="animate-pulse" />
        </div>
-
-       {/* Content */}
-       <div className="flex-1 p-4 flex items-center bg-[#202020]">
-          <p className="text-sm text-gray-300 leading-relaxed font-sans">
-             <span className="text-amber-500 font-bold mr-2">[重要公告]</span>
-             2025年6月25日起战网通行证登录入口将分阶段逐步关闭，主要登录方式切换为网易账号。请完成绑定的玩家使用网易账号登录。
-          </p>
+       
+       {/* Right Content Area - White/Light Gray */}
+       <div className="flex-1 bg-gray-200 flex items-center px-4 relative overflow-hidden">
+          {/* Background Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-300"></div>
+          
+          <div className="relative z-10 flex items-center w-full gap-3">
+             <span className="text-amber-700 font-bold text-sm">[重要]</span>
+             <p className="text-gray-800 text-sm font-medium truncate flex-1">
+                2025年6月25日起战网通行证登录入口将分阶段逐步关闭，主要登录方式切换为网易账号。
+             </p>
+             <span className="text-gray-500 text-xs group-hover:text-amber-600 transition-colors">点击查看详情 &gt;</span>
+          </div>
        </div>
     </div>
 

@@ -1,0 +1,6 @@
+$WowheadPower.registerItem('23475', 0, {
+	name_enus: 'Recruit\'s Boots',
+	quality: 1,
+	icon: 'inv_boots_06',
+	tooltip_enus: '<table><tr><td><b class=\"q1\">Recruit\'s Boots</b><table width=\"100%\"><tr><td>Feet</td></tr></table><!--e--><!--ps-->Item Level 1<br /></td></tr></table><table><tr><td><div class=\"q1 whtt-sellprice\">Sell Price: <span class=\"moneycopper\">1</span></div></td></tr></table><!--?23475:1:1:80-->'
+});

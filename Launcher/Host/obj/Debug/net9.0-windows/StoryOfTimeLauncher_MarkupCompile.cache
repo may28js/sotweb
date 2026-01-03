@@ -1,20 +1,20 @@
 ﻿StoryOfTimeLauncher
-
+1.0.0.0
 
 winexe
 C#
 .cs
-F:\工作区\模块开发\StoryOfTimeLauncher\Launcher\Host\obj\Debug\net9.0-windows\
+f:\工作区\模块开发\StoryOfTimeLauncher\Launcher\Host\obj\Debug\net9.0-windows\
 StoryOfTimeLauncher
 none
 false
-TRACE;DEBUG;NET;NET9_0;NETCOREAPP
-F:\工作区\模块开发\StoryOfTimeLauncher\Launcher\Host\App.xaml
+TRACE;DEBUG;NET;NET9_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
+f:\工作区\模块开发\StoryOfTimeLauncher\Launcher\Host\App.xaml
 11407045341
 3-340226832
-8-135374248
+12-942301158
 213337381980
 MainWindow.xaml;
 
-False
+True
 

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("StoryOfTimeLauncher")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f6a371723e16a9fb35640d8978619c12e3d79815")]
 [assembly: System.Reflection.AssemblyProductAttribute("StoryOfTimeLauncher")]
 [assembly: System.Reflection.AssemblyTitleAttribute("StoryOfTimeLauncher")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
