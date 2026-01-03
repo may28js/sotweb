@@ -24,7 +24,13 @@ namespace StoryOfTime.Server.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Points { get; set; } = 0; // Site currency
 
-        // 0: User, 1: Moderator, 2: Admin, 3: Owner
-        public int AccessLevel { get; set; } = 0; 
+        // Constants for Access Levels
+        public const int Level_User = 0;
+        public const int Level_Moderator = 1; // News, Support
+        public const int Level_Admin = 2;     // Shop, Game Settings
+        public const int Level_Partner = 3;   // Financial Stats (Read Only)
+        public const int Level_Owner = 4;     // Full Control
+
+        public int AccessLevel { get; set; } = Level_User; 
     }
 }

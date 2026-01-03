@@ -19,18 +19,32 @@ namespace StoryOfTime.Server.Controllers
             _context = context;
         }
 
-        private bool IsAdmin()
+        private bool HasReadAccess()
         {
             var accessLevelClaim = User.FindFirst("AccessLevel");
             if (accessLevelClaim == null) return false;
-            return int.TryParse(accessLevelClaim.Value, out int level) && level >= 2;
+            if (!int.TryParse(accessLevelClaim.Value, out int level)) return false;
+            
+            // Admin (2), Partner (3), Owner (4) can read
+            return level >= StoryOfTime.Server.Models.User.Level_Admin;
+        }
+
+        private bool HasWriteAccess()
+        {
+            var accessLevelClaim = User.FindFirst("AccessLevel");
+            if (accessLevelClaim == null) return false;
+            if (!int.TryParse(accessLevelClaim.Value, out int level)) return false;
+
+            // Only Admin (2) and Owner (4) can write. Partner (3) is Read-Only.
+            return level == StoryOfTime.Server.Models.User.Level_Admin || 
+                   level == StoryOfTime.Server.Models.User.Level_Owner;
         }
 
         // GET: api/admin/shop
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ShopItem>>> GetItems()
         {
-            if (!IsAdmin()) return Forbid();
+            if (!HasReadAccess()) return Forbid();
             return await _context.ShopItems.ToListAsync();
         }
 
@@ -38,7 +52,7 @@ namespace StoryOfTime.Server.Controllers
         [HttpGet("orders")]
         public async Task<ActionResult<IEnumerable<object>>> GetOrders()
         {
-            if (!IsAdmin()) return Forbid();
+            if (!HasReadAccess()) return Forbid();
             
             var orders = await _context.ShopOrders
                 .Include(o => o.User)
@@ -62,7 +76,7 @@ namespace StoryOfTime.Server.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ShopItem>> GetItem(int id)
         {
-            if (!IsAdmin()) return Forbid();
+            if (!HasReadAccess()) return Forbid();
             var item = await _context.ShopItems.FindAsync(id);
 
             if (item == null)
@@ -77,7 +91,7 @@ namespace StoryOfTime.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<ShopItem>> CreateItem(ShopItem item)
         {
-            if (!IsAdmin()) return Forbid();
+            if (!HasWriteAccess()) return Forbid();
             _context.ShopItems.Add(item);
             await _context.SaveChangesAsync();
 
@@ -88,7 +102,7 @@ namespace StoryOfTime.Server.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateItem(int id, ShopItem item)
         {
-            if (!IsAdmin()) return Forbid();
+            if (!HasWriteAccess()) return Forbid();
             if (id != item.Id)
             {
                 return BadRequest();
@@ -119,7 +133,7 @@ namespace StoryOfTime.Server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteItem(int id)
         {
-            if (!IsAdmin()) return Forbid();
+            if (!HasWriteAccess()) return Forbid();
             var item = await _context.ShopItems.FindAsync(id);
             if (item == null)
             {

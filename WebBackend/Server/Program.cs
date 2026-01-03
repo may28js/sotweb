@@ -176,26 +176,30 @@ using (var scope = app.Services.CreateScope())
         Console.ResetColor();
     }
 
-    // Try to find user 'm' first
-    var targetUser = dbContext.Users.FirstOrDefault(u => u.Username == "m");
-    
-    // Fallback to first user if 'm' not found (just in case)
-    if (targetUser == null)
+    // Seed Initial Owner based on Configuration
+    var initialOwnerName = app.Configuration["OwnerSettings:InitialOwnerUsername"];
+    if (!string.IsNullOrEmpty(initialOwnerName))
     {
-        targetUser = dbContext.Users.OrderBy(u => u.Id).FirstOrDefault();
-    }
-
-    if (targetUser != null && targetUser.AccessLevel < 10)
-    {
-        targetUser.AccessLevel = 10; // 10 = Admin
-        dbContext.SaveChanges();
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"[SYSTEM] User '{targetUser.Username}' (ID: {targetUser.Id}) has been promoted to Admin (Level 10). Please Relogin!");
-        Console.ResetColor();
-    }
-    else if (targetUser != null)
-    {
-         Console.WriteLine($"[SYSTEM] User '{targetUser.Username}' (ID: {targetUser.Id}) is already Admin (Level {targetUser.AccessLevel}).");
+        var targetUser = dbContext.Users.FirstOrDefault(u => u.Username == initialOwnerName);
+        if (targetUser != null)
+        {
+            if (targetUser.AccessLevel != StoryOfTime.Server.Models.User.Level_Owner)
+            {
+                targetUser.AccessLevel = StoryOfTime.Server.Models.User.Level_Owner;
+                dbContext.SaveChanges();
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.WriteLine($"[SYSTEM] User '{targetUser.Username}' has been promoted to OWNER (Level 4) via configuration.");
+                Console.ResetColor();
+            }
+            else
+            {
+                 Console.WriteLine($"[SYSTEM] User '{targetUser.Username}' is already Owner.");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"[SYSTEM] Initial Owner '{initialOwnerName}' not found in database yet. Please register with this username.");
+        }
     }
 }
 
