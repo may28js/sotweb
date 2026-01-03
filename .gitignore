@@ -21,6 +21,11 @@ Release/
 .env.test.local
 .env.production.local
 
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
 # IDE settings
 .vscode/
 .idea/
