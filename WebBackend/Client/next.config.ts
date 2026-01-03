@@ -14,17 +14,18 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+      const apiUrl = process.env.API_URL || 'http://localhost:5200';
       return [
         {
           source: '/api/:path*',
-          destination: 'http://localhost:5200/api/:path*',
+          destination: `${apiUrl}/api/:path*`,
         },
         {
           source: '/uploads/:path*',
-          destination: 'http://localhost:5200/uploads/:path*',
+          destination: `${apiUrl}/uploads/:path*`,
         },
       ];
-    },
+  },
 };
 
 export default nextConfig;

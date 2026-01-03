@@ -107,8 +107,8 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    // Ensure DB is created
-    // dbContext.Database.EnsureCreated(); 
+    // Ensure DB is created and migrated
+    dbContext.Database.Migrate();
 
     // Seed News if demo news are missing
     if (!dbContext.News.Any(n => n.Title == "补丁说明：更新 1.2 - 启程"))

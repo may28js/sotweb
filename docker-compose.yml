@@ -1,0 +1,30 @@
+services:
+  server:
+    build: 
+      context: ./WebBackend/Server
+      dockerfile: Dockerfile
+    container_name: sot_server
+    ports:
+      - "5200:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/storyoftime.db
+      # If you use MySQL in the future, add connection strings here
+      # - ConnectionStrings__AuthConnection=...
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/wwwroot/uploads
+    restart: always
+
+  client:
+    build: 
+      context: ./WebBackend/Client
+      dockerfile: Dockerfile
+    container_name: sot_client
+    ports:
+      - "3000:3000"
+    environment:
+      - API_URL=http://sot_server:8080
+    depends_on:
+      - server
+    restart: always
