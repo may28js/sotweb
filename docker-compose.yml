@@ -22,8 +22,8 @@ services:
       context: ./WebBackend/Client
       dockerfile: Dockerfile
     container_name: sot_client
-    ports:
-      - "3000:3000"
+    # ports:
+    #   - "3000:3000"
     environment:
       - API_URL=http://sot_server:8080
     depends_on:

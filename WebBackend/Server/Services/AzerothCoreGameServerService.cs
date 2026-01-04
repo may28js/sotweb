@@ -9,20 +9,18 @@ namespace StoryOfTime.Server.Services
 {
     public class AzerothCoreGameServerService : IGameServerService
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly ApplicationDbContext _context;
         private readonly ILogger<AzerothCoreGameServerService> _logger;
 
-        public AzerothCoreGameServerService(IServiceProvider serviceProvider, ILogger<AzerothCoreGameServerService> logger)
+        public AzerothCoreGameServerService(ApplicationDbContext context, ILogger<AzerothCoreGameServerService> logger)
         {
-            _serviceProvider = serviceProvider;
+            _context = context;
             _logger = logger;
         }
 
         private async Task<GameServerSetting?> GetSettingsAsync()
         {
-            using var scope = _serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            return await context.GameServerSettings.FirstOrDefaultAsync();
+            return await _context.GameServerSettings.FirstOrDefaultAsync();
         }
 
         public async Task<ServerStatusDto> GetStatusAsync()
@@ -73,7 +71,9 @@ namespace StoryOfTime.Server.Services
                         var authStatusCmd = client.CreateCommand($"systemctl is-active {settings.AuthServiceName}");
                         var authServiceStatus = authStatusCmd.Execute().Trim();
                         
-                        if (worldServiceStatus == "active" && authServiceStatus == "active")
+                        // Treat 'active' or 'activating' as running, otherwise offline
+                        if ((worldServiceStatus == "active" || worldServiceStatus == "activating") && 
+                            (authServiceStatus == "active" || authServiceStatus == "activating"))
                         {
                             status.Status = "Online";
 
@@ -85,7 +85,8 @@ namespace StoryOfTime.Server.Services
                             if (coreCount < 1) coreCount = 1;
 
                             // Get CPU and Memory usage of the process
-                            var statsCmd = client.CreateCommand("ps -C worldserver -o %cpu,%mem --no-headers");
+                            // Note: %cpu in ps can exceed 100% on multi-core, so we divide by cores
+                            var statsCmd = client.CreateCommand($"ps -C {settings.WorldServiceName.Replace(".service","")} -o %cpu,%mem --no-headers");
                             var result = statsCmd.Execute().Trim();
                             
                             if (!string.IsNullOrEmpty(result))
@@ -97,25 +98,14 @@ namespace StoryOfTime.Server.Services
                                     if (double.TryParse(parts[1], out double mem)) status.MemoryUsage = (int)mem;
                                 }
                             }
-
-                            // Get Game Server Process Uptime
-                            var uptimeCmd = client.CreateCommand("ps -C worldserver -o etimes --no-headers");
-                            var uptimeSecondsStr = uptimeCmd.Execute().Trim();
                             
-                            if (long.TryParse(uptimeSecondsStr, out long uptimeSeconds))
+                            // Get Uptime
+                            var uptimeCmd = client.CreateCommand($"ps -C {settings.WorldServiceName.Replace(".service","")} -o etimes --no-headers");
+                            var uptimeStr = uptimeCmd.Execute().Trim();
+                            if (long.TryParse(uptimeStr, out long uptimeSeconds))
                             {
                                 TimeSpan t = TimeSpan.FromSeconds(uptimeSeconds);
-                                var parts = new List<string>();
-                                if (t.Days > 0) parts.Add($"{t.Days} 天");
-                                if (t.Hours > 0) parts.Add($"{t.Hours} 小时");
-                                if (t.Minutes > 0) parts.Add($"{t.Minutes} 分钟");
-                                if (parts.Count == 0) parts.Add("少于 1 分钟");
-                                
-                                status.Uptime = string.Join(" ", parts);
-                            }
-                            else
-                            {
-                                status.Uptime = "未知";
+                                status.Uptime = $"{t.Days}d {t.Hours}h {t.Minutes}m";
                             }
                         }
                         else
@@ -141,9 +131,6 @@ namespace StoryOfTime.Server.Services
 
         public async Task<List<OnlineHistoryDto>> GetHistoryAsync(string period = "24h")
         {
-            using var scope = _serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            
             var now = DateTime.UtcNow;
             DateTime cutoff;
             int intervalMinutes;
@@ -180,7 +167,7 @@ namespace StoryOfTime.Server.Services
                     break;
             }
             
-            var logs = await context.ServerStatusLogs
+            var logs = await _context.ServerStatusLogs
                 .Where(x => x.Timestamp >= cutoff)
                 .ToListAsync();
 

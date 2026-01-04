@@ -6,7 +6,7 @@ using StoryOfTime.Server.Models;
 
 namespace StoryOfTime.Server.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/settings/game")]
     [ApiController]
     [Authorize]
     public class GameSettingsController : ControllerBase
@@ -97,6 +97,12 @@ namespace StoryOfTime.Server.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                
+                // IMPORTANT: In a more complex scenario, we should signal IGameServerService 
+                // to invalidate its cache if it caches settings.
+                // Currently, AzerothCoreGameServerService reads settings on every request (via DbContext),
+                // so no explicit cache clearing is needed. 
+                // If performance becomes an issue, we can introduce caching.
             }
             catch (Exception ex)
             {

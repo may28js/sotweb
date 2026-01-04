@@ -35,7 +35,8 @@ export default function ShopPage() {
     updateQuantity: updateCartQuantity, 
     clearCart,
     cartTotal,
-    closeCart
+    closeCart,
+    openCart
   } = useCart();
 
   const [items, setItems] = useState<ShopItem[]>([]);

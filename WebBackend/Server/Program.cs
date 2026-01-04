@@ -108,7 +108,16 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     // Ensure DB is created and migrated
-    dbContext.Database.Migrate();
+    try 
+    {
+        Console.WriteLine("[SYSTEM] Applying Database Migrations...");
+        dbContext.Database.Migrate();
+        Console.WriteLine("[SYSTEM] Database Migrations Applied Successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[SYSTEM] Database Migration Failed: {ex.Message}");
+    }
 
     // Seed News if demo news are missing
     if (!dbContext.News.Any(n => n.Title == "补丁说明：更新 1.2 - 启程"))
