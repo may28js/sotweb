@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 // Define shared types
 export interface Product {
@@ -37,29 +38,40 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load cart from localStorage on mount
+  // Get dynamic cart key based on user
+  const getCartKey = () => user ? `shopping-cart-${user.id}` : 'shopping-cart-guest';
+
+  // Load cart from localStorage when user changes
   useEffect(() => {
-    const savedCart = localStorage.getItem('shopping-cart');
+    setIsLoaded(false);
+    const key = getCartKey();
+    const savedCart = localStorage.getItem(key);
+    
     if (savedCart) {
       try {
         setCart(JSON.parse(savedCart));
       } catch (e) {
         console.error('Failed to parse cart from localStorage', e);
+        setCart([]);
       }
+    } else {
+      setCart([]);
     }
     setIsLoaded(true);
-  }, []);
+  }, [user]); // Re-run when user changes
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('shopping-cart', JSON.stringify(cart));
+      const key = getCartKey();
+      localStorage.setItem(key, JSON.stringify(cart));
     }
-  }, [cart, isLoaded]);
+  }, [cart, isLoaded, user]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {

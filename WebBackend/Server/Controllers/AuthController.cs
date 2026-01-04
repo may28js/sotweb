@@ -36,9 +36,10 @@ namespace StoryOfTime.Server.Controllers
         {
             _logger.LogInformation("Received registration request for email: {Email}", request.Email);
 
+            // 1. Check if user exists in Web DB
             if (await _context.Users.AnyAsync(u => u.Username == request.Username))
             {
-                return BadRequest("Username already exists.");
+                return BadRequest("用户名或邮箱已存在");
             }
 
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
@@ -46,6 +47,50 @@ namespace StoryOfTime.Server.Controllers
                 return BadRequest("Email already registered.");
             }
 
+            // 2. Check if user exists in Game DB (Pre-check)
+            // If Game Settings are configured, we MUST ensure the username is available there too.
+            // This prevents creating a Web User that cannot be synced to Game DB.
+            var settings = await _context.GameServerSettings.FirstOrDefaultAsync();
+            if (settings != null)
+            {
+                try 
+                {
+                    _logger.LogInformation("[Game Sync Pre-Check] Checking Game DB for existing user...");
+                    var connectionString = $"Server={settings.Host};Port={settings.Port};Database={settings.AuthDatabase};User={settings.Username};Password={settings.Password};";
+                    
+                    using var connection = new MySqlConnector.MySqlConnection(connectionString);
+                    await connection.OpenAsync();
+
+                    using var checkCmd = connection.CreateCommand();
+                    // Explicitly convert both DB column and input to UPPER case to be absolutely safe
+                    checkCmd.CommandText = "SELECT COUNT(*) FROM account WHERE UPPER(username) = @username OR UPPER(email) = @email";
+                    checkCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@username", request.Username.ToUpper()));
+                    checkCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@email", request.Email.ToUpper()));
+                    
+                    var countObj = await checkCmd.ExecuteScalarAsync();
+                    var count = Convert.ToInt32(countObj);
+                    
+                    _logger.LogInformation($"[Game Sync Pre-Check] Query Result: {count} matches found for Username='{request.Username.ToUpper()}' OR Email='{request.Email.ToUpper()}'");
+
+                    if (count > 0)
+                    {
+                        _logger.LogWarning("[Game Sync Pre-Check] Username '{Username}' or Email '{Email}' already exists in Game DB.", request.Username, request.Email);
+                        return BadRequest("用户名或邮箱已存在");
+                    }
+                    _logger.LogInformation("[Game Sync Pre-Check] Username and Email are available in Game DB.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Game Sync Pre-Check] Failed to connect to Game DB. Aborting registration to ensure consistency.");
+                    return StatusCode(500, $"注册失败: 无法连接到游戏数据库验证账号 - {ex.Message}");
+                }
+            }
+            else
+            {
+                 _logger.LogWarning("[Game Sync Pre-Check] Game Settings not configured. Skipping Game DB check.");
+            }
+
+            // 3. Create Web User
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
             var user = new User
@@ -62,123 +107,80 @@ namespace StoryOfTime.Server.Controllers
 
             _logger.LogInformation("Local user created with ID: {Id}. Starting Game Sync...", user.Id);
 
-            // --- Game Database Sync (Start) ---
-            try
+            // 4. Sync to Game DB (Insert)
+            // We already checked availability, but we wrap in try-catch for insertion errors
+            if (settings != null)
             {
-                var settings = await _context.GameServerSettings.FirstOrDefaultAsync();
-                
-                if (settings == null)
+                try
                 {
-                    _logger.LogWarning("[Game Sync Error] GameServerSettings is NULL! Skipping game account creation. Please configure Game Settings in Admin Panel.");
-                }
-                else
-                {
-                    _logger.LogInformation("[Game Sync] Settings found. Host: {Host}, AuthDB: {AuthDB}", settings.Host, settings.AuthDatabase);
-                    
                     var connectionString = $"Server={settings.Host};Port={settings.Port};Database={settings.AuthDatabase};User={settings.Username};Password={settings.Password};";
-                    
                     using var connection = new MySqlConnector.MySqlConnection(connectionString);
                     await connection.OpenAsync();
-                    _logger.LogInformation("[Game Sync] Connected to Game Auth Database.");
 
-                    // Check if account exists
-                    using var checkCmd = connection.CreateCommand();
-                    checkCmd.CommandText = "SELECT COUNT(*) FROM account WHERE username = @username OR email = @email";
-                    checkCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@username", request.Username.ToUpper()));
-                    checkCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@email", request.Email));
+                    // ... SRP6 Logic ...
+                    // 1. Calculate SHA1 Hash: H1 = SHA1(UPPER(USERNAME + ":" + PASSWORD))
+                    var rawString = $"{request.Username.ToUpper()}:{request.Password.ToUpper()}";
+                    var sha1HashBytes = SHA1.HashData(Encoding.UTF8.GetBytes(rawString));
+
+                    // 2. Generate Random Salt (32 bytes)
+                    var saltBytes = new byte[32];
+                    using (var rng = RandomNumberGenerator.Create())
+                    {
+                        rng.GetBytes(saltBytes);
+                    }
+                    saltBytes[0] |= 0x80; 
+
+                    // 3. Calculate H2 = SHA1(Salt + H1)
+                    var combined = new byte[saltBytes.Length + sha1HashBytes.Length];
+                    Buffer.BlockCopy(saltBytes, 0, combined, 0, saltBytes.Length);
+                    Buffer.BlockCopy(sha1HashBytes, 0, combined, saltBytes.Length, sha1HashBytes.Length);
                     
-                    var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
-
-                    if (count > 0)
+                    var h2Bytes = SHA1.HashData(combined);
+                    
+                    // 4. Calculate Verifier: v = g ^ x mod N
+                    var x = new BigInteger(h2Bytes, isUnsigned: true, isBigEndian: false);
+                    var v = BigInteger.ModPow(g, x, N);
+                    var vBytes = v.ToByteArray(isUnsigned: true, isBigEndian: false);
+                    
+                    // Ensure vBytes is exactly 32 bytes
+                    if (vBytes.Length < 32)
                     {
-                        _logger.LogWarning("[Game Sync] Account or Email already exists in Game DB. Skipping insertion.");
+                        var temp = new byte[32];
+                        Array.Copy(vBytes, 0, temp, 0, vBytes.Length);
+                        vBytes = temp;
                     }
-                    else
+                    else if (vBytes.Length > 32)
                     {
-                        // 1. Calculate SHA1 Hash: H1 = SHA1(UPPER(USERNAME + ":" + PASSWORD))
-                        var rawString = $"{request.Username.ToUpper()}:{request.Password.ToUpper()}";
-                        var sha1HashBytes = SHA1.HashData(Encoding.UTF8.GetBytes(rawString));
-
-                        // 2. Generate Random Salt (32 bytes)
-                        var saltBytes = new byte[32];
-                        using (var rng = RandomNumberGenerator.Create())
-                        {
-                            rng.GetBytes(saltBytes);
-                        }
-                        // FORCE Salt to be non-zero / large enough to avoid ACore trimming leading zeros
-                        // This ensures consistent 32-byte length handling in ACore's BN_bin2bn/BN_bn2bin
-                        saltBytes[0] |= 0x80; 
-
-                        // 3. Calculate H2 = SHA1(Salt + H1)
-                        var combined = new byte[saltBytes.Length + sha1HashBytes.Length];
-                        Buffer.BlockCopy(saltBytes, 0, combined, 0, saltBytes.Length);
-                        Buffer.BlockCopy(sha1HashBytes, 0, combined, saltBytes.Length, sha1HashBytes.Length);
-                        
-                        var h2Bytes = SHA1.HashData(combined);
-                        
-                        // 4. Calculate Verifier: v = g ^ x mod N
-                        
-                        // ACore Wiki: "Treat h2 as an integer in little-endian order"
-                        // SHA1 output (h2Bytes) is a byte sequence. 
-                        // C# BigInteger(byte[]) constructor interprets the byte array as Little-Endian.
-                        // Therefore, we use h2Bytes directly without reversal.
-                        
-                        var x = new BigInteger(h2Bytes, isUnsigned: true, isBigEndian: false);
-
-                        var v = BigInteger.ModPow(g, x, N);
-                        
-                        // ACore Wiki: "Convert the result back to a byte array in little-endian order"
-                        var vBytes = v.ToByteArray(isUnsigned: true, isBigEndian: false);
-                        
-                        // Ensure vBytes is exactly 32 bytes (pad with zeros at the END for Little-Endian)
-                        if (vBytes.Length < 32)
-                        {
-                            var temp = new byte[32];
-                            Array.Copy(vBytes, 0, temp, 0, vBytes.Length);
-                            vBytes = temp;
-                        }
-                        else if (vBytes.Length > 32)
-                        {
-                            var temp = new byte[32];
-                            Array.Copy(vBytes, 0, temp, 0, 32);
-                            vBytes = temp;
-                        }
-
-                        _logger.LogInformation($"[Game Sync Debug] Salt: {Convert.ToHexString(saltBytes)}");
-                        _logger.LogInformation($"[Game Sync Debug] Verifier (Little-Endian): {Convert.ToHexString(vBytes)}");
-
-                        // Insert into account table
-                        // NOTE: Most SQL clients / ACore expect raw bytes.
-                        // If ACore reads "verifier" column as BINARY(32) and casts to BigNumber assuming Little-Endian storage, this is correct.
-                        using var insertCmd = connection.CreateCommand();
-                        insertCmd.CommandText = @"
-                            INSERT INTO account (username, salt, verifier, email, joindate, expansion) 
-                            VALUES (@username, @salt, @verifier, @email, NOW(), 2)";
-                        
-                        insertCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@username", request.Username.ToUpper()));
-                        insertCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@salt", saltBytes)); 
-                        insertCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@verifier", vBytes));
-                        insertCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@email", request.Email));
-
-                        await insertCmd.ExecuteNonQueryAsync();
-                        _logger.LogInformation("[Game Sync] Account created successfully in Game DB!");
+                        var temp = new byte[32];
+                        Array.Copy(vBytes, 0, temp, 0, 32);
+                        vBytes = temp;
                     }
+
+                    // Insert into account table
+                    using var insertCmd = connection.CreateCommand();
+                    insertCmd.CommandText = @"
+                        INSERT INTO account (username, salt, verifier, email, joindate, expansion) 
+                        VALUES (@username, @salt, @verifier, @email, NOW(), 2)";
+                    
+                    insertCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@username", request.Username.ToUpper()));
+                    insertCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@salt", saltBytes)); 
+                    insertCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@verifier", vBytes));
+                    insertCmd.Parameters.Add(new MySqlConnector.MySqlParameter("@email", request.Email));
+
+                    await insertCmd.ExecuteNonQueryAsync();
+                    _logger.LogInformation("[Game Sync] Account created successfully in Game DB!");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Game Sync Error] Failed to sync account to game DB.");
+                    
+                    // Rollback Web User if Sync Fails
+                    _context.Users.Remove(user);
+                    await _context.SaveChangesAsync();
+                    
+                    return StatusCode(500, $"注册失败: 游戏数据库同步错误 - {ex.Message}");
                 }
             }
-            catch (Exception ex)
-            {
-                // Log error but don't fail the web registration to avoid bad UX?
-                // Or fail it? User previously experienced 500 error and reported it.
-                // If we fail here, we should rollback the web user.
-                _logger.LogError(ex, "[Game Sync Error] Failed to sync account to game DB.");
-                
-                // Rollback
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-                
-                return StatusCode(500, $"注册失败: 游戏数据库同步错误 - {ex.Message}");
-            }
-            // --- Game Database Sync (End) ---
 
             return Ok(user);
         }

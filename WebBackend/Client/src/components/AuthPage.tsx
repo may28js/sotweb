@@ -24,8 +24,35 @@ export default function AuthPage({ mode }: AuthPageProps) {
     stayLoggedIn: false
   });
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateField = (name: string, value: string) => {
+    let error = '';
+    if (name === 'username') {
+      if (!/^[a-zA-Z0-9]{3,}$/.test(value)) {
+        error = '用户名需为3位以上字母或数字';
+      }
+    } else if (name === 'password') {
+       if (value.length < 6 || !/[a-zA-Z]/.test(value) || !/\d/.test(value)) {
+         error = '密码需至少6位，且包含字母和数字';
+       }
+    }
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+    return error;
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (isRegistering) {
+      validateField(e.target.name, e.target.value);
+    }
+  };
 
   const { login } = useAuth();
   const router = useRouter();
@@ -60,19 +87,38 @@ export default function AuthPage({ mode }: AuthPageProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    const name = e.target.name;
     setFormData({
       ...formData,
-      [e.target.name]: value
+      [name]: value
     });
+
+    // Clear error when user starts typing
+    if (fieldErrors[name]) {
+        setFieldErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[name];
+            return newErrors;
+        });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setIsLoading(true);
 
     try {
       if (isRegistering) {
+        // Validation
+        const usernameError = validateField('username', formData.username);
+        const passwordError = validateField('password', formData.password);
+        
+        if (usernameError || passwordError) {
+             throw new Error('请修正表单中的错误');
+        }
+
         if (formData.password !== formData.confirmPassword) {
           throw new Error('两次输入的密码不一致');
         }
@@ -85,8 +131,8 @@ export default function AuthPage({ mode }: AuthPageProps) {
           password: formData.password,
           invitationToken: formData.invitationToken
         });
-        alert('注册成功！请登录。');
-        router.push('/login');
+        setSuccessMessage('注册成功！正在跳转登录...');
+        setTimeout(() => router.push('/login'), 1500);
       } else {
         const response = await api.post('/Auth/login', { 
           username: formData.username, 
@@ -150,12 +196,17 @@ export default function AuthPage({ mode }: AuthPageProps) {
                           {error}
                       </div>
                   )}
+                  {successMessage && (
+                      <div className="bg-green-500/10 border border-green-500/30 text-green-500 px-4 py-3 rounded-lg text-sm text-center">
+                          {successMessage}
+                      </div>
+                  )}
 
                   <form onSubmit={handleSubmit} className="space-y-6">
                 
                 {/* Username Input */}
                 <div>
-                    <div className="relative">
+                    <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <User className="h-4 w-4 text-gray-400/50" />
                         </div>
@@ -165,9 +216,19 @@ export default function AuthPage({ mode }: AuthPageProps) {
                             required
                             value={formData.username}
                             onChange={handleInputChange}
-                            className="block w-full pl-10 pr-3 py-2 border border-white/10 rounded-lg bg-[#323232] text-white/50 placeholder-gray-400/50 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
+                            onBlur={handleBlur}
+                            className={`block w-full pl-10 pr-3 py-2 border ${fieldErrors.username ? 'border-red-500' : 'border-white/10'} rounded-lg bg-[#323232] text-white/50 placeholder-gray-400/50 focus:outline-none focus:ring-2 ${fieldErrors.username ? 'focus:ring-red-500' : 'focus:ring-yellow-500'} focus:border-transparent transition-all duration-200`}
                             placeholder="请输入用户名"
                         />
+                        {/* Validation Bubble */}
+                        {fieldErrors.username && (
+                           <div className="absolute left-0 -bottom-10 z-20 animate-in fade-in zoom-in duration-200">
+                               <div className="relative bg-red-600 text-white text-xs px-3 py-1.5 rounded shadow-lg">
+                                   <div className="absolute -top-1 left-4 w-2 h-2 bg-red-600 transform rotate-45"></div>
+                                   {fieldErrors.username}
+                               </div>
+                           </div>
+                        )}
                     </div>
                 </div>
 
@@ -193,7 +254,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
 
                 {/* Password Input */}
                 <div>
-                    <div className="relative">
+                    <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Lock className="h-4 w-4 text-gray-400/50" />
                         </div>
@@ -203,7 +264,8 @@ export default function AuthPage({ mode }: AuthPageProps) {
                             required
                             value={formData.password}
                             onChange={handleInputChange}
-                            className="block w-full pl-10 pr-12 py-2 border border-white/10 rounded-lg bg-[#323232] text-white/50 placeholder-gray-400/50 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
+                            onBlur={handleBlur}
+                            className={`block w-full pl-10 pr-12 py-2 border ${fieldErrors.password ? 'border-red-500' : 'border-white/10'} rounded-lg bg-[#323232] text-white/50 placeholder-gray-400/50 focus:outline-none focus:ring-2 ${fieldErrors.password ? 'focus:ring-red-500' : 'focus:ring-yellow-500'} focus:border-transparent transition-all duration-200`}
                             placeholder="请输入密码"
                         />
                         <button 
@@ -218,6 +280,15 @@ export default function AuthPage({ mode }: AuthPageProps) {
                                 <Eye className="h-4 w-4 text-gray-400 hover:text-yellow-500 transition-colors duration-200" />
                             )}
                         </button>
+                        {/* Validation Bubble */}
+                        {fieldErrors.password && (
+                           <div className="absolute left-0 -bottom-10 z-20 animate-in fade-in zoom-in duration-200">
+                               <div className="relative bg-red-600 text-white text-xs px-3 py-1.5 rounded shadow-lg">
+                                   <div className="absolute -top-1 left-4 w-2 h-2 bg-red-600 transform rotate-45"></div>
+                                   {fieldErrors.password}
+                               </div>
+                           </div>
+                        )}
                     </div>
                     {!isRegistering && (
                         <div className="mt-2 text-right">

@@ -85,22 +85,46 @@ namespace StoryOfTime.Server.Services
                             if (coreCount < 1) coreCount = 1;
 
                             // Get CPU and Memory usage of the process
-                            // Note: %cpu in ps can exceed 100% on multi-core, so we divide by cores
-                            var statsCmd = client.CreateCommand($"ps -C {settings.WorldServiceName.Replace(".service","")} -o %cpu,%mem --no-headers");
+                            // Try service name first, then fallback to 'worldserver' binary name
+                            string processName = settings.WorldServiceName.Replace(".service", "");
+                            var statsCmd = client.CreateCommand($"ps -C {processName} -o %cpu,%mem --no-headers");
                             var result = statsCmd.Execute().Trim();
+
+                            if (string.IsNullOrEmpty(result))
+                            {
+                                // Fallback to 'worldserver'
+                                statsCmd = client.CreateCommand($"ps -C worldserver -o %cpu,%mem --no-headers");
+                                result = statsCmd.Execute().Trim();
+                                processName = "worldserver"; // Update for uptime check
+                            }
                             
                             if (!string.IsNullOrEmpty(result))
                             {
-                                var parts = result.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                                if (parts.Length >= 2)
+                                // If multiple processes match (e.g. multiple threads shown as processes in some ps versions, or multiple instances), 
+                                // ps -C might return multiple lines. We should sum them or take the top one.
+                                // With --no-headers, we just get values.
+                                // Let's handle multi-line by summing.
+                                var lines = result.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                                double totalCpu = 0;
+                                double totalMem = 0;
+
+                                foreach (var line in lines)
                                 {
-                                    if (double.TryParse(parts[0], out double cpu)) status.CpuUsage = (int)(cpu / coreCount); // Normalize to 0-100%
-                                    if (double.TryParse(parts[1], out double mem)) status.MemoryUsage = (int)mem;
+                                    var parts = line.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                    if (parts.Length >= 2)
+                                    {
+                                        if (double.TryParse(parts[0], out double cpu)) totalCpu += cpu;
+                                        if (double.TryParse(parts[1], out double mem)) totalMem += mem;
+                                    }
                                 }
+                                
+                                status.CpuUsage = (int)(totalCpu / coreCount); // Normalize to 0-100%
+                                status.MemoryUsage = (int)totalMem;
                             }
                             
                             // Get Uptime
-                            var uptimeCmd = client.CreateCommand($"ps -C {settings.WorldServiceName.Replace(".service","")} -o etimes --no-headers");
+                            var uptimeCmd = client.CreateCommand($"ps -C {processName} -o etimes --no-headers | head -n 1");
+
                             var uptimeStr = uptimeCmd.Execute().Trim();
                             if (long.TryParse(uptimeStr, out long uptimeSeconds))
                             {
