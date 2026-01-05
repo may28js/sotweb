@@ -13,6 +13,8 @@ dist/
 # Dotnet build output
 Debug/
 Release/
+publish/
+**/publish/
 
 # Environment variables
 .env
