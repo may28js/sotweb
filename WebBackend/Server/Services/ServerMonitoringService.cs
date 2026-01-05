@@ -61,7 +61,8 @@ namespace StoryOfTime.Server.Services
                 }
 
                 await dbContext.SaveChangesAsync();
-                _logger.LogInformation($"Recorded server status: {status.OnlinePlayers} players online.");
+                
+                _logger.LogDebug("Recorded server status: {OnlinePlayers} players online.", status.OnlinePlayers);
             }
             catch (Exception ex)
             {

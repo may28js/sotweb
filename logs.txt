@@ -1,0 +1,83 @@
+~/sotweb# docker compose logs -f server
+sot_server  | [SYSTEM] Applying Database Migrations...
+sot_server  | info: Microsoft.EntityFrameworkCore.Migrations[20411]
+sot_server  |       Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (10ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsLock' AND "type" = 'table';
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (25ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-01-04 11:00:33.344932+00:00');
+sot_server  |       SELECT changes();
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+sot_server  |           "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+sot_server  |           "ProductVersion" TEXT NOT NULL
+sot_server  |       );
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT "MigrationId", "ProductVersion"
+sot_server  |       FROM "__EFMigrationsHistory"
+sot_server  |       ORDER BY "MigrationId";
+sot_server  | info: Microsoft.EntityFrameworkCore.Migrations[20405]
+sot_server  |       No migrations were applied. The database is already up to date.
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       DELETE FROM "__EFMigrationsLock";
+sot_server  | [SYSTEM] Database Migrations Applied Successfully.
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT EXISTS (
+sot_server  |           SELECT 1
+sot_server  |           FROM "News" AS "n"
+sot_server  |           WHERE "n"."Title" = '补丁说明：更新 1.2 - 启程')
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (2ms) [Parameters=[@__initialOwnerName_0='?' (Size = 5)], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT "u"."Id", "u"."AccessLevel", "u"."CreatedAt", "u"."Email", "u"."PasswordHash", "u"."Points", "u"."Username"
+sot_server  |       FROM "Users" AS "u"
+sot_server  |       WHERE "u"."Username" = @__initialOwnerName_0
+sot_server  |       LIMIT 1
+sot_server  | [SYSTEM] Initial Owner 'admin' not found in database yet. Please register with this username.
+sot_server  | warn: Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository[60]
+sot_server  |       Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+sot_server  | info: StoryOfTime.Server.Services.ServerMonitoringService[0]
+sot_server  |       Server Monitoring Service is starting.
+sot_server  | warn: Microsoft.EntityFrameworkCore.Query[10103]
+sot_server  |       The query uses the 'First'/'FirstOrDefault' operator without 'OrderBy' and filter operators. This may lead to unpredictable results.
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT "g"."Id", "g"."AuthDatabase", "g"."AuthServiceName", "g"."CharactersDatabase", "g"."Host", "g"."Password", "g"."Port", "g"."SoapHost", "g"."SoapPassword", "g"."SoapPort", "g"."SoapUsername", "g"."SshHost", "g"."SshPassword", "g"."SshPort", "g"."SshUsername", "g"."Username", "g"."WorldServiceName"
+sot_server  |       FROM "GameServerSettings" AS "g"
+sot_server  |       LIMIT 1
+sot_server  | warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[35]
+sot_server  |       No XML encryptor configured. Key {a791ba97-2c2b-4c3b-84a3-319f21abf5a9} may be persisted to storage in unencrypted form.
+sot_server  | warn: Microsoft.AspNetCore.Hosting.Diagnostics[15]
+sot_server  |       Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:8080'.
+sot_server  | info: Microsoft.Hosting.Lifetime[14]
+sot_server  |       Now listening on: http://[::]:8080
+sot_server  | info: Microsoft.Hosting.Lifetime[0]
+sot_server  |       Application started. Press Ctrl+C to shut down.
+sot_server  | info: Microsoft.Hosting.Lifetime[0]
+sot_server  |       Hosting environment: Development
+sot_server  | info: Microsoft.Hosting.Lifetime[0]
+sot_server  |       Content root path: /app
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@__cutoff_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT EXISTS (
+sot_server  |           SELECT 1
+sot_server  |           FROM "ServerStatusLogs" AS "s"
+sot_server  |           WHERE "s"."Timestamp" < @__cutoff_0)
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (DbType = Int32), @p3='?' (Size = 6), @p4='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       INSERT INTO "ServerStatusLogs" ("CpuUsage", "MemoryUsage", "OnlinePlayers", "Status", "Timestamp")
+sot_server  |       VALUES (@p0, @p1, @p2, @p3, @p4)
+sot_server  |       RETURNING "Id";
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT "g"."Id", "g"."AuthDatabase", "g"."AuthServiceName", "g"."CharactersDatabase", "g"."Host", "g"."Password", "g"."Port", "g"."SoapHost", "g"."SoapPassword", "g"."SoapPort", "g"."SoapUsername", "g"."SshHost", "g"."SshPassword", "g"."SshPort", "g"."SshUsername", "g"."Username", "g"."WorldServiceName"
+sot_server  |       FROM "GameServerSettings" AS "g"
+sot_server  |       LIMIT 1

@@ -168,6 +168,47 @@ namespace StoryOfTime.Server.Migrations
                     b.ToTable("News");
                 });
 
+            modelBuilder.Entity("StoryOfTime.Server.Models.PaymentTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PaymentTransactions");
+                });
+
             modelBuilder.Entity("StoryOfTime.Server.Models.ServerStatusLog", b =>
                 {
                     b.Property<int>("Id")
@@ -378,6 +419,17 @@ namespace StoryOfTime.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("News");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("StoryOfTime.Server.Models.PaymentTransaction", b =>
+                {
+                    b.HasOne("StoryOfTime.Server.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

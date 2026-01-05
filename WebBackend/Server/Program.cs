@@ -27,6 +27,7 @@ builder.Services.Configure<GameServerOptions>(options =>
 });
 builder.Services.AddScoped<IGameServerService, AzerothCoreGameServerService>();
 builder.Services.AddHostedService<ServerMonitoringService>();
+builder.Services.AddHttpClient<IOxapayService, OxapayService>();
 
 // Configure Request Size Limit (50MB)
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
@@ -94,6 +95,22 @@ app.UseStaticFiles(new StaticFileOptions
         Path.Combine(builder.Environment.ContentRootPath, "wwwroot")),
     ContentTypeProvider = provider
 });
+
+// Auto-apply migrations
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+    }
+}
 
 // app.UseStaticFiles(); // Replaced by above
 

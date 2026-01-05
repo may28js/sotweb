@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Check, CreditCard, Loader2 } from 'lucide-react';
+import { Check, CreditCard, Loader2, Wallet } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import TimeFragment from '@/components/TimeFragment';
 
@@ -47,27 +47,27 @@ export default function DonatePage() {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/Store/donate', {
+      const res = await fetch('/api/Payment/recharge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ 
-            amount: option.amount,
-            bonus: option.bonus,
-            price: option.price
+            amount: option.price // Send price (money) instead of points
         })
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        if (data.newBalance !== undefined) {
-            updatePoints(data.newBalance);
+        if (data.payLink) {
+            // Redirect to Oxapay payment page
+            window.location.href = data.payLink;
+        } else {
+            // Fallback or error if no link returned
+            setErrorMsg('未获取到支付链接');
         }
-        alert(`成功购买 ${option.amount} 时光碎片!`);
-        router.push('/shop');
       } else {
         setErrorMsg(data.message || '购买失败');
       }
@@ -171,11 +171,10 @@ export default function DonatePage() {
                     <div className="space-y-4 pt-4">
                       <label className="block text-sm font-medium text-gray-400">支付方式</label>
                       <div className="grid grid-cols-1 gap-3">
-                        <button className="flex items-center justify-center gap-3 p-3 rounded bg-[#2a2a2a] border border-white/10 hover:border-yellow-500 hover:bg-[#333] transition-all text-white">
-                          <CreditCard className="w-5 h-5" />
-                          <span>信用卡 / Stripe</span>
+                        <button className="flex items-center justify-center gap-3 p-3 rounded bg-[#2a2a2a] border border-yellow-500 bg-yellow-500/10 text-white cursor-default">
+                          <Wallet className="w-5 h-5 text-yellow-500" />
+                          <span>加密货币 (Oxapay)</span>
                         </button>
-                        {/* Add more payment methods here */}
                       </div>
                     </div>
 

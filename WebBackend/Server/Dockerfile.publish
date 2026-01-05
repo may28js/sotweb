@@ -1,0 +1,13 @@
+# 直接使用运行时镜像，不再进行编译
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
+WORKDIR /app
+
+# 复制当前目录下的所有文件到容器的 /app 目录
+# (假设你已经把 publish 文件夹里的内容上传到了 Dockerfile 所在的同级目录)
+COPY . .
+
+# 确保上传目录存在
+RUN mkdir -p wwwroot/uploads
+
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "StoryOfTime.Server.dll"]

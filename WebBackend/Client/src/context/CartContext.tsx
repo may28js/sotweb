@@ -63,7 +63,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setCart([]);
     }
     setIsLoaded(true);
-  }, [user]); // Re-run when user changes
+  }, [user?.id]); // Re-run only when user ID changes (avoids reload on point updates)
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -71,7 +71,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const key = getCartKey();
       localStorage.setItem(key, JSON.stringify(cart));
     }
-  }, [cart, isLoaded, user]);
+  }, [cart, isLoaded, user?.id]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {

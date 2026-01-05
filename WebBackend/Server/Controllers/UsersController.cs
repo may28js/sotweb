@@ -35,6 +35,7 @@ namespace StoryOfTime.Server.Controllers
                 Email = u.Email,
                 AccessLevel = u.AccessLevel,
                 Points = u.Points,
+                CreatedAt = u.CreatedAt
                 // PasswordHash is NOT returned
             }).ToListAsync();
         }

@@ -18,5 +18,6 @@ namespace StoryOfTime.Server.Data
         public DbSet<ShopItem> ShopItems { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<ServerStatusLog> ServerStatusLogs { get; set; }
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
     }
 }

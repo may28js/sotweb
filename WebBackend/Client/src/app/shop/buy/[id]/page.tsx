@@ -140,6 +140,11 @@ export default function BuyPage() {
         ? `购买成功！${res.data.message || '物品已发送。'}` 
         : `购买成功！物品已发送给 ${characterName}。`
       );
+
+      // Delay redirect to shop page
+      setTimeout(() => {
+        router.push('/shop');
+      }, 2000);
     } catch (err: any) {
       console.error('Purchase failed:', err);
       let msg = '购买失败，请重试。';

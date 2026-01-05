@@ -16,8 +16,8 @@ const fzytk = localFont({
 })
 
 export const metadata: Metadata = {
-  title: '时光故事 - World of Warcraft',
-  description: '时光故事 - Story of Time World of Warcraft Server',
+  title: '时光故事 - Story Of Time',
+  description: '时光故事 - Story Of Time World of Warcraft Server',
 }
 
 export default function RootLayout({

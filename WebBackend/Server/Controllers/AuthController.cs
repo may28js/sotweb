@@ -188,19 +188,68 @@ namespace StoryOfTime.Server.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login(UserLoginDto request)
         {
+            _logger.LogInformation("Login request received for user: {Username}", request.Username);
+            
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
             if (user == null)
             {
+                _logger.LogWarning("Login failed: User {Username} not found.", request.Username);
                 return BadRequest("User not found.");
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            bool isPasswordValid = false;
+            bool needsRehash = false;
+
+            try
             {
+                // Try BCrypt verification
+                if (BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                {
+                    isPasswordValid = true;
+                }
+            }
+            catch (BCrypt.Net.SaltParseException)
+            {
+                // Password hash is not in BCrypt format (Legacy support)
+                // Fallback: Check if it matches plaintext (for development/migration)
+                if (user.PasswordHash == request.Password)
+                {
+                    isPasswordValid = true;
+                    needsRehash = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                 _logger.LogWarning(ex, "Password verification failed for user {Username}", request.Username);
+                 // Treat as wrong password to avoid 500
+                 return BadRequest("密码验证出错，请重置密码。");
+            }
+
+            if (!isPasswordValid)
+            {
+                _logger.LogWarning("Login failed: Wrong password for user {Username}.", request.Username);
                 return BadRequest("Wrong password.");
             }
 
-            string token = CreateToken(user);
-            return Ok(new { token });
+            // Auto-migrate legacy passwords to BCrypt
+            if (needsRehash)
+            {
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Migrated password for user {Username} to BCrypt.", request.Username);
+            }
+
+            try 
+            {
+                string token = CreateToken(user);
+                _logger.LogInformation("Login successful for user {Username}. Token generated.", request.Username);
+                return Ok(new { token });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create token for user {Username}", request.Username);
+                return StatusCode(500, "Login failed: Token generation error.");
+            }
         }
 
         [HttpGet("me")]

@@ -1,0 +1,101 @@
+~/sotweb# docker compose logs --tail=100 server
+sot_server  |           SELECT 1
+sot_server  |           FROM "ServerStatusLogs" AS "s"
+sot_server  |           WHERE "s"."Timestamp" < @__cutoff_0)
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (DbType = Int32), @p3='?' (Size = 6), @p4='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       INSERT INTO "ServerStatusLogs" ("CpuUsage", "MemoryUsage", "OnlinePlayers", "Status", "Timestamp")
+sot_server  |       VALUES (@p0, @p1, @p2, @p3, @p4)
+sot_server  |       RETURNING "Id";
+sot_server  | info: StoryOfTime.Server.Services.ServerMonitoringService[0]
+sot_server  |       Recorded server status: 0 players online.
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT "g"."Id", "g"."AuthDatabase", "g"."AuthServiceName", "g"."CharactersDatabase", "g"."Host", "g"."Password", "g"."Port", "g"."SoapHost", "g"."SoapPassword", "g"."SoapPort", "g"."SoapUsername", "g"."SshHost", "g"."SshPassword", "g"."SshPort", "g"."SshUsername", "g"."Username", "g"."WorldServiceName"
+sot_server  |       FROM "GameServerSettings" AS "g"
+sot_server  |       LIMIT 1
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@__cutoff_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT EXISTS (
+sot_server  |           SELECT 1
+sot_server  |           FROM "ServerStatusLogs" AS "s"
+sot_server  |           WHERE "s"."Timestamp" < @__cutoff_0)
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (DbType = Int32), @p3='?' (Size = 6), @p4='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       INSERT INTO "ServerStatusLogs" ("CpuUsage", "MemoryUsage", "OnlinePlayers", "Status", "Timestamp")
+sot_server  |       VALUES (@p0, @p1, @p2, @p3, @p4)
+sot_server  |       RETURNING "Id";
+sot_server  | info: StoryOfTime.Server.Services.ServerMonitoringService[0]
+sot_server  |       Recorded server status: 0 players online.
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT "g"."Id", "g"."AuthDatabase", "g"."AuthServiceName", "g"."CharactersDatabase", "g"."Host", "g"."Password", "g"."Port", "g"."SoapHost", "g"."SoapPassword", "g"."SoapPort", "g"."SoapUsername", "g"."SshHost", "g"."SshPassword", "g"."SshPort", "g"."SshUsername", "g"."Username", "g"."WorldServiceName"
+sot_server  |       FROM "GameServerSettings" AS "g"
+sot_server  |       LIMIT 1
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@__cutoff_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT EXISTS (
+sot_server  |           SELECT 1
+sot_server  |           FROM "ServerStatusLogs" AS "s"
+sot_server  |           WHERE "s"."Timestamp" < @__cutoff_0)
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (DbType = Int32), @p3='?' (Size = 6), @p4='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       INSERT INTO "ServerStatusLogs" ("CpuUsage", "MemoryUsage", "OnlinePlayers", "Status", "Timestamp")
+sot_server  |       VALUES (@p0, @p1, @p2, @p3, @p4)
+sot_server  |       RETURNING "Id";
+sot_server  | info: StoryOfTime.Server.Services.ServerMonitoringService[0]
+sot_server  |       Recorded server status: 0 players online.
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT "g"."Id", "g"."AuthDatabase", "g"."AuthServiceName", "g"."CharactersDatabase", "g"."Host", "g"."Password", "g"."Port", "g"."SoapHost", "g"."SoapPassword", "g"."SoapPort", "g"."SoapUsername", "g"."SshHost", "g"."SshPassword", "g"."SshPort", "g"."SshUsername", "g"."Username", "g"."WorldServiceName"
+sot_server  |       FROM "GameServerSettings" AS "g"
+sot_server  |       LIMIT 1
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@__cutoff_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT EXISTS (
+sot_server  |           SELECT 1
+sot_server  |           FROM "ServerStatusLogs" AS "s"
+sot_server  |           WHERE "s"."Timestamp" < @__cutoff_0)
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (DbType = Int32), @p3='?' (Size = 6), @p4='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       INSERT INTO "ServerStatusLogs" ("CpuUsage", "MemoryUsage", "OnlinePlayers", "Status", "Timestamp")
+sot_server  |       VALUES (@p0, @p1, @p2, @p3, @p4)
+sot_server  |       RETURNING "Id";
+sot_server  | info: StoryOfTime.Server.Services.ServerMonitoringService[0]
+sot_server  |       Recorded server status: 0 players online.
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT "g"."Id", "g"."AuthDatabase", "g"."AuthServiceName", "g"."CharactersDatabase", "g"."Host", "g"."Password", "g"."Port", "g"."SoapHost", "g"."SoapPassword", "g"."SoapPort", "g"."SoapUsername", "g"."SshHost", "g"."SshPassword", "g"."SshPort", "g"."SshUsername", "g"."Username", "g"."WorldServiceName"
+sot_server  |       FROM "GameServerSettings" AS "g"
+sot_server  |       LIMIT 1
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@__cutoff_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT EXISTS (
+sot_server  |           SELECT 1
+sot_server  |           FROM "ServerStatusLogs" AS "s"
+sot_server  |           WHERE "s"."Timestamp" < @__cutoff_0)
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (DbType = Int32), @p3='?' (Size = 6), @p4='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       INSERT INTO "ServerStatusLogs" ("CpuUsage", "MemoryUsage", "OnlinePlayers", "Status", "Timestamp")
+sot_server  |       VALUES (@p0, @p1, @p2, @p3, @p4)
+sot_server  |       RETURNING "Id";
+sot_server  | info: StoryOfTime.Server.Services.ServerMonitoringService[0]
+sot_server  |       Recorded server status: 0 players online.
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT "g"."Id", "g"."AuthDatabase", "g"."AuthServiceName", "g"."CharactersDatabase", "g"."Host", "g"."Password", "g"."Port", "g"."SoapHost", "g"."SoapPassword", "g"."SoapPort", "g"."SoapUsername", "g"."SshHost", "g"."SshPassword", "g"."SshPort", "g"."SshUsername", "g"."Username", "g"."WorldServiceName"
+sot_server  |       FROM "GameServerSettings" AS "g"
+sot_server  |       LIMIT 1
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@__cutoff_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       SELECT EXISTS (
+sot_server  |           SELECT 1
+sot_server  |           FROM "ServerStatusLogs" AS "s"
+sot_server  |           WHERE "s"."Timestamp" < @__cutoff_0)
+sot_server  | info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+sot_server  |       Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (DbType = Int32), @p3='?' (Size = 6), @p4='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+sot_server  |       INSERT INTO "ServerStatusLogs" ("CpuUsage", "MemoryUsage", "OnlinePlayers", "Status", "Timestamp")
+sot_server  |       VALUES (@p0, @p1, @p2, @p3, @p4)
+sot_server  |       RETURNING "Id";
+sot_server  | info: StoryOfTime.Server.Services.ServerMonitoringService[0]
+sot_server  |       Recorded server status: 0 players online.
