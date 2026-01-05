@@ -1,4 +1,4 @@
 {
-  "apiBaseUrl": "https://api.storyoftime.com/v1",
-  "enableMockData": true
+  "apiBaseUrl": "http://localhost:5200/api",
+  "enableMockData": false
 }

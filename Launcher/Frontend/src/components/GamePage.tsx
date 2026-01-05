@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
-import { api } from '../services/api';
+import { newsService, patchNoteService } from '../services/api';
 import type { NewsItem, PatchNoteItem } from '../types';
 
 const PatchNote = ({ version, date, content, highlight }: { version: string, date: string, content: string, highlight?: boolean }) => (
@@ -41,8 +41,8 @@ const GamePage = () => {
     const fetchData = async () => {
         try {
             const [newsData, patchData] = await Promise.all([
-                api.getNews(),
-                api.getPatchNotes()
+                newsService.getNews(),
+                patchNoteService.getPatchNotes()
             ]);
             setNews(newsData);
             setPatchNotes(patchData);

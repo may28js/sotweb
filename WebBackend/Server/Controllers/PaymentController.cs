@@ -150,10 +150,10 @@ namespace StoryOfTime.Server.Controllers
     public class OxapayWebhookRequest
     {
         public long trackId { get; set; }
-        public string status { get; set; }
-        public string orderId { get; set; }
+        public required string status { get; set; }
+        public required string orderId { get; set; }
         public decimal amount { get; set; }
-        public string currency { get; set; }
+        public required string currency { get; set; }
         // Add other fields as per Oxapay docs
     }
 }

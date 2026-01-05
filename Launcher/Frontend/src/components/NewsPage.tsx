@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Shield } from 'lucide-react';
-import { api } from '../services/api';
+import { newsService } from '../services/api';
 import type { NewsItem } from '../types';
 
 const NewsListItem = ({ item }: { item: NewsItem }) => (
@@ -28,7 +28,7 @@ const NewsPage = () => {
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const data = await api.getNews();
+                const data = await newsService.getNews();
                 setNews(data);
             } catch (error) {
                 console.error("Failed to fetch news", error);

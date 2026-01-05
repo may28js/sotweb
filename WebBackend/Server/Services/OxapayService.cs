@@ -83,7 +83,7 @@ namespace StoryOfTime.Server.Services
     public class OxapayInvoiceResponse
     {
         public int result { get; set; }
-        public string message { get; set; }
+        public required string message { get; set; }
         // Fields can be directly here or in data, depending on endpoint. 
         // For /merchants/request, it seems they are flat in the response based on logs.
         public string? trackId { get; set; }
@@ -96,8 +96,8 @@ namespace StoryOfTime.Server.Services
 
     public class OxapayInvoiceData
     {
-        public string address { get; set; }
-        public string pay_link { get; set; }
+        public required string address { get; set; }
+        public required string pay_link { get; set; }
         public long trackId { get; set; }
     }
 }

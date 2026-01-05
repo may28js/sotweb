@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { User, Lock, ArrowRight, Sparkles, Mail, ShieldCheck, X, Minus, Square } from 'lucide-react';
 
+import { authService } from './services/api';
+
 interface LoginPageProps {
   onLogin: () => void;
   onDrag: (e: React.MouseEvent) => void;
+  onClose?: () => void;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onDrag }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onDrag, onClose }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -16,15 +20,32 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onDrag }) => {
     email: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate network request
-    setTimeout(() => {
-      setIsLoading(false);
-      onLogin();
-    }, 1500);
+    setError(null);
+
+    try {
+        if (isRegistering) {
+            if (formData.password !== formData.confirmPassword) {
+                throw new Error("两次输入的密码不一致");
+            }
+            await authService.register(formData.username, formData.email, formData.password);
+            // Auto login after register or switch to login mode?
+            // Let's switch to login mode for clarity
+            setIsRegistering(false);
+            setError("注册成功！请登录。"); // Using error state for success message temporarily or add success state
+        } else {
+            const token = await authService.login(formData.username, formData.password);
+            localStorage.setItem('auth_token', token);
+            onLogin();
+        }
+    } catch (err: any) {
+        console.error(err);
+        setError(err.message || "操作失败，请重试");
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,14 +56,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onDrag }) => {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#0f0518] text-white font-sans select-none relative">
+    <div className={`fixed inset-0 z-[100] flex flex-col overflow-hidden text-white font-sans select-none ${onClose ? 'bg-black/80 backdrop-blur-sm' : 'bg-[#0f0518]'}`}>
       
-      {/* Background Effects */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute top-[-50%] left-[-20%] w-[1000px] h-[1000px] rounded-full bg-indigo-900/20 blur-[120px] animate-pulse"></div>
-          <div className="absolute bottom-[-20%] right-[-20%] w-[800px] h-[800px] rounded-full bg-amber-900/10 blur-[100px]"></div>
-          <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
-      </div>
+      {/* Background Effects - Only if not modal (optional, or simplified for modal) */}
+      {!onClose && (
+        <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="absolute top-[-50%] left-[-20%] w-[1000px] h-[1000px] rounded-full bg-indigo-900/20 blur-[120px] animate-pulse"></div>
+            <div className="absolute bottom-[-20%] right-[-20%] w-[800px] h-[800px] rounded-full bg-amber-900/10 blur-[100px]"></div>
+            <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+        </div>
+      )}
 
       {/* Draggable Top Bar */}
       <div 
@@ -50,9 +73,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onDrag }) => {
         onMouseDown={onDrag}
       >
         <div className="flex items-center gap-4 text-gray-500" onMouseDown={e => e.stopPropagation()}>
-             <button className="hover:text-white transition-colors"><Minus size={16} /></button>
-             <button className="hover:text-white transition-colors"><Square size={14} /></button>
-             <button className="hover:text-red-500 transition-colors"><X size={16} /></button>
+             {onClose ? (
+                <button onClick={onClose} className="hover:text-white transition-colors bg-white/10 rounded-full p-1"><X size={20} /></button>
+             ) : (
+                <>
+                    <button className="hover:text-white transition-colors"><Minus size={16} /></button>
+                    <button className="hover:text-white transition-colors"><Square size={14} /></button>
+                    <button className="hover:text-red-500 transition-colors"><X size={16} /></button>
+                </>
+             )}
         </div>
       </div>
 
@@ -75,6 +104,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onDrag }) => {
               </h1>
               <p className="text-gray-400 text-sm tracking-widest uppercase">Story of Time</p>
            </div>
+           
+           {/* Error Message */}
+           {error && (
+            <div className={`mb-4 p-3 rounded bg-opacity-20 border ${error.includes('成功') ? 'bg-green-500 border-green-500 text-green-200' : 'bg-red-500 border-red-500 text-red-200'} text-sm text-center`}>
+                {error}
+            </div>
+           )}
 
            {/* Form */}
            <form onSubmit={handleSubmit} className="space-y-4">

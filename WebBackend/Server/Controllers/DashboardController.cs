@@ -91,34 +91,34 @@ namespace StoryOfTime.Server.Controllers
         public int TotalNews { get; set; }
         public int TotalComments { get; set; }
         public int TotalOrders { get; set; }
-        public List<DashboardUserDto> RecentUsers { get; set; }
+        public required List<DashboardUserDto> RecentUsers { get; set; }
     }
     
     public class DashboardUserDto {
         public int Id { get; set; }
-        public string Username { get; set; }
-        public string Email { get; set; }
+        public required string Username { get; set; }
+        public required string Email { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 
     public class ServerStatusDto
     {
-        public string Status { get; set; }
+        public required string Status { get; set; }
         public int CpuUsage { get; set; }
         public int MemoryUsage { get; set; }
         public int OnlinePlayers { get; set; }
         public int MaxPlayers { get; set; }
-        public string Uptime { get; set; }
+        public required string Uptime { get; set; }
     }
 
     public class OnlineHistoryDto
     {
-        public string Time { get; set; }
+        public required string Time { get; set; }
         public int? Players { get; set; }
     }
 
     public class ServerControlDto
     {
-        public string Action { get; set; }
+        public required string Action { get; set; }
     }
 }

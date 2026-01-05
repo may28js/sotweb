@@ -16,6 +16,42 @@ namespace StoryOfTimeLauncher.Services
             return File.Exists(fullPath);
         }
 
+        public void UpdateRealmlist(string installPath, string realmlistAddress)
+        {
+            if (string.IsNullOrEmpty(installPath)) return;
+
+            string[] potentialPaths = new[]
+            {
+                Path.Combine(installPath, "Data", "zhCN", "realmlist.wtf"),
+                Path.Combine(installPath, "Data", "enCN", "realmlist.wtf"),
+                Path.Combine(installPath, "Data", "enUS", "realmlist.wtf"),
+                Path.Combine(installPath, "Data", "realmlist.wtf")
+            };
+
+            string content = $"set realmlist {realmlistAddress}";
+            bool updated = false;
+
+            foreach (string path in potentialPaths)
+            {
+                if (File.Exists(path))
+                {
+                    File.WriteAllText(path, content);
+                    updated = true;
+                }
+            }
+
+            if (!updated)
+            {
+                string dataPath = Path.Combine(installPath, "Data");
+                if (Directory.Exists(dataPath))
+                {
+                    string zhCN = Path.Combine(dataPath, "zhCN");
+                    if (!Directory.Exists(zhCN)) Directory.CreateDirectory(zhCN);
+                    File.WriteAllText(Path.Combine(zhCN, "realmlist.wtf"), content);
+                }
+            }
+        }
+
         public void LaunchGame(string installPath)
         {
             if (!IsGameInstalled(installPath))

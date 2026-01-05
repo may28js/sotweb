@@ -9,7 +9,7 @@ namespace StoryOfTime.Server.Models
 
         public int UserId { get; set; }
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User User { get; set; } = default!;
 
         public string OrderId { get; set; } = string.Empty; // Internal Order ID
         public string ExternalId { get; set; } = string.Empty; // Oxapay Invoice ID

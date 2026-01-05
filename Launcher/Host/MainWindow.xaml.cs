@@ -22,6 +22,7 @@ namespace StoryOfTimeLauncher
         private readonly IDownloadService _downloadService;
 
         private const string GameDownloadUrl = "https://btground.tk/chmi/ChromieCraft_3.3.5a.zip";
+        private string _currentRealmlist = "shiguanggushi.xyz";
 
         public MainWindow()
         {
@@ -70,8 +71,18 @@ namespace StoryOfTimeLauncher
                 // Handle messages from the frontend
                 webView.WebMessageReceived += WebView_WebMessageReceived;
 
-                // Navigate to the frontend dev server
-                webView.CoreWebView2.Navigate("http://localhost:5173");
+                // Navigate to the frontend
+                // Check for local index.html (Production)
+                string localIndex = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "index.html");
+                if (File.Exists(localIndex))
+                {
+                    webView.CoreWebView2.Navigate(localIndex);
+                }
+                else
+                {
+                    // Fallback to Dev Server
+                    webView.CoreWebView2.Navigate("http://localhost:5173");
+                }
                 
                 // Check game status after navigation (give it a moment to load)
                 // In a real app, we might wait for a "frontend_ready" message
@@ -127,6 +138,21 @@ namespace StoryOfTimeLauncher
                         break;
                     case "resume_download":
                         _downloadService.ResumeDownload();
+                        break;
+                    case "set_realmlist":
+                        if (message.Payload is JsonElement payload && payload.TryGetProperty("realmlist", out var realmlistProp))
+                        {
+                            string r = realmlistProp.GetString();
+                             if (!string.IsNullOrEmpty(r))
+                             {
+                                 _currentRealmlist = r;
+                                 string installPath = _configService.CurrentConfig.InstallPath;
+                                 if (!string.IsNullOrEmpty(installPath))
+                                 {
+                                     _gameService.UpdateRealmlist(installPath, r);
+                                 }
+                             }
+                        }
                         break;
                 }
             }
@@ -206,6 +232,7 @@ namespace StoryOfTimeLauncher
 
             try
             {
+                _gameService.UpdateRealmlist(path, _currentRealmlist);
                 _gameService.LaunchGame(path);
                 SendToFrontend("game_launched");
                 // Optional: Minimize launcher

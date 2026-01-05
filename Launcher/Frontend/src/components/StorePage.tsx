@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ShoppingBag, Gem, History, ChevronUp, Check, Search, Star } from 'lucide-react';
 import type { ShopItem } from '../types';
-import { api } from '../services/api';
+import { shopService } from '../services/api';
 
 const ShopFilter = ({ label, options }: { label: string, options: string[] }) => (
   <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ const StorePage = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const items = await api.getShopItems();
+        const items = await shopService.getShopItems();
         setShopItems(items);
       } catch (error) {
         console.error("Failed to fetch shop items", error);

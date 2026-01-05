@@ -30,7 +30,8 @@ namespace StoryOfTime.Server.Services
             var status = new ServerStatusDto
             {
                 Status = "Offline",
-                MaxPlayers = 1000 // Configurable?
+                MaxPlayers = 1000, // Configurable?
+                Uptime = "N/A"
             };
 
             if (settings == null) return status;

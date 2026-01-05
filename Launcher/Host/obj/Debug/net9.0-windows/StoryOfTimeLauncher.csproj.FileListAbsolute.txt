@@ -30,3 +30,4 @@ F:\工作区\模块开发\StoryOfTimeLauncher\Launcher\Host\obj\Debug\net9.0-win
 F:\工作区\模块开发\StoryOfTimeLauncher\Launcher\Host\obj\Debug\net9.0-windows\StoryOfTimeLauncher.pdb
 F:\工作区\模块开发\StoryOfTimeLauncher\Launcher\Host\obj\Debug\net9.0-windows\StoryOfTimeLauncher.genruntimeconfig.cache
 F:\工作区\模块开发\StoryOfTimeLauncher\Launcher\Host\obj\Debug\net9.0-windows\ref\StoryOfTimeLauncher.dll
+F:\工作区\模块开发\StoryOfTimeLauncher\Launcher\Host\obj\Debug\net9.0-windows\StoryOfTimeLauncher.sourcelink.json

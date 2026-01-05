@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LoginPage from './LoginPage';
+import { launcherService } from './services/api';
+import type { ServerStatus, LauncherConfig } from './types';
 import { 
   Sword,
   Ghost, 
@@ -26,6 +28,7 @@ type GameStatus = 'not_installed' | 'installing' | 'updating' | 'ready' | 'playi
 function App() {
   const [activeTab, setActiveTab] = useState('game');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [gameStatus, setGameStatus] = useState<GameStatus>('not_installed');
   const [progress, setProgress] = useState(0); // 0-100
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
@@ -33,6 +36,38 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [installPath, setInstallPath] = useState<string | null>(null);
   const [downloadSpeed, setDownloadSpeed] = useState('0 KB/s');
+  // Removed serverStatus state as requested
+  // const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
+  const [launcherConfig, setLauncherConfig] = useState<LauncherConfig | null>(null);
+
+  useEffect(() => {
+    const initConfig = async () => {
+        const config = await launcherService.getConfig();
+        setLauncherConfig(config);
+        // @ts-ignore
+        if (window.chrome?.webview) {
+            // @ts-ignore
+            window.chrome.webview.postMessage({ 
+                type: 'set_realmlist', 
+                payload: { realmlist: config.realmlist } 
+            });
+        }
+    };
+    initConfig();
+  }, []);
+
+  // Removed server status fetching effect
+  /*
+  useEffect(() => {
+    const fetchStatus = async () => {
+        const status = await launcherService.getStatus();
+        setServerStatus(status);
+    };
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 60000); 
+    return () => clearInterval(interval);
+  }, []);
+  */
 
   // IPC Handling
   useEffect(() => {
@@ -124,7 +159,10 @@ function App() {
                setProgress(0);
                
                // @ts-ignore
-               window.chrome.webview.postMessage({ type: 'start_download' });
+               window.chrome.webview.postMessage({ 
+                 type: 'start_download',
+                 payload: { url: launcherConfig?.downloadUrl }
+               });
            } else {
                setShowInstallPrompt(true);
            }
@@ -186,31 +224,34 @@ function App() {
     }
   };
 
-  if (!isLoggedIn) {
+  if (isLoading) {
     return (
-      <>
-        {isLoading && (
-            <div className="absolute inset-0 z-50 bg-[#0f0518] flex flex-col items-center justify-center">
-                <div className="relative w-24 h-24 mb-8">
-                    <div className="absolute inset-0 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div>
-                    <div className="absolute inset-4 border-4 border-purple-500/30 border-b-purple-500 rounded-full animate-[spin_3s_linear_infinite_reverse]"></div>
-                    <div className="absolute inset-0 flex items-center justify-center text-amber-500 font-bold animate-pulse">
-                        S
-                    </div>
-                </div>
-                <div className="text-amber-500/50 font-mono tracking-[0.5em] text-sm animate-pulse">INITIALIZING</div>
-            </div>
-        )}
-        <LoginPage onLogin={() => setIsLoggedIn(true)} onDrag={handleDrag} />
-      </>
+      <div className="absolute inset-0 z-50 bg-[#0f0518] flex flex-col items-center justify-center">
+        <div className="relative w-24 h-24 mb-8">
+          <div className="absolute inset-0 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div>
+          <div className="absolute inset-4 border-4 border-purple-500/30 border-b-purple-500 rounded-full animate-[spin_3s_linear_infinite_reverse]"></div>
+          <div className="absolute inset-0 flex items-center justify-center text-amber-500 font-bold animate-pulse">
+            S
+          </div>
+        </div>
+        <div className="text-amber-500/50 font-mono tracking-[0.5em] text-sm animate-pulse">INITIALIZING</div>
+      </div>
     );
   }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#0f0518] text-white font-sans select-none border border-white/5 rounded-lg relative">
       
-      {/* Loading Overlay - Only if still loading AND logged in (which shouldn't happen with current logic, but safe to keep or remove) */}
-      {/* Actually we want to remove it to prevent the blocking issue */}
+      {showLoginModal && (
+        <LoginPage 
+          onLogin={() => {
+            setIsLoggedIn(true);
+            setShowLoginModal(false);
+          }} 
+          onDrag={handleDrag}
+          onClose={() => setShowLoginModal(false)}
+        />
+      )}
 
       {/* Sidebar */}
       <aside className="w-[70px] flex flex-col items-center py-6 bg-black/20 border-r border-white/5 z-20 backdrop-blur-sm">
@@ -284,38 +325,47 @@ function App() {
             className="flex items-center gap-6 pr-24" // Added padding-right to avoid window control overlap
             onMouseDown={(e) => e.stopPropagation()}
           >
-            {/* Integrated Profile */}
-            <div className="flex items-center gap-4 group cursor-pointer">
-              
-              {/* Info Column (Name + Currency) */}
-              <div className="flex flex-col items-end gap-1">
-                  <div className="flex items-center gap-2">
-                     <span className="text-base font-bold text-gray-200 group-hover:text-amber-400 transition-colors">TimeWalker</span>
-                     <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_5px_#22c55e]"></div>
-                  </div>
-                  
-                  {/* Compact Currency */}
-                  <div className="flex items-center gap-3 text-xs bg-black/40 px-2 py-0.5 rounded border border-white/5">
-                     <div className="flex items-center gap-1 text-emerald-400">
-                        <Gem size={10} className="fill-emerald-400/20" /> 6
-                     </div>
-                     <div className="w-px h-2 bg-white/10"></div>
-                     <div className="flex items-center gap-1 text-amber-400">
-                        <Gem size={10} className="fill-amber-400/20" /> 1,199
-                     </div>
-                  </div>
+            {isLoggedIn ? (
+              /* Integrated Profile */
+              <div className="flex items-center gap-4 group cursor-pointer">
+                
+                {/* Info Column (Name + Currency) */}
+                <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2">
+                       <span className="text-base font-bold text-gray-200 group-hover:text-amber-400 transition-colors">TimeWalker</span>
+                       <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_5px_#22c55e]"></div>
+                    </div>
+                    
+                    {/* Compact Currency */}
+                    <div className="flex items-center gap-3 text-xs bg-black/40 px-2 py-0.5 rounded border border-white/5">
+                       <div className="flex items-center gap-1 text-emerald-400">
+                          <Gem size={10} className="fill-emerald-400/20" /> 6
+                       </div>
+                       <div className="w-px h-3 bg-white/10"></div>
+                       <div className="flex items-center gap-1 text-amber-400">
+                          <span className="text-[10px] opacity-70">VP</span> 120
+                       </div>
+                    </div>
+                </div>
+                
+                {/* Avatar */}
+                <div className="relative">
+                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 p-0.5 shadow-lg shadow-orange-900/40 group-hover:shadow-orange-500/20 transition-all">
+                      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" className="w-full h-full rounded-full bg-[#1a0b2e]" alt="Avatar" />
+                   </div>
+                   <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#1a0b2e] rounded-full flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#1a0b2e]"></div>
+                   </div>
+                </div>
               </div>
-
-              {/* Large Avatar */}
-              <div className="w-12 h-12 rounded-full p-0.5 bg-gradient-to-b from-amber-500 to-amber-700 shadow-[0_0_15px_rgba(245,158,11,0.3)] group-hover:scale-105 transition-transform relative z-10">
-                 <img 
-                   src="https://api.dicebear.com/7.x/avataaars/svg?seed=TimeWalker" 
-                   alt="User" 
-                   className="w-full h-full rounded-full bg-[#1a0b2e]" 
-                 />
-              </div>
-
-            </div>
+            ) : (
+              <button 
+                onClick={() => setShowLoginModal(true)}
+                className="px-6 py-2 bg-white/5 hover:bg-white/10 text-gray-300 font-medium rounded-lg border border-white/10 hover:border-white/30 transition-all active:scale-95"
+              >
+                登录账户
+              </button>
+            )}
           </div>
         </header>
 
@@ -377,6 +427,7 @@ function App() {
                     </button>
                 </div>
             )}
+            {/* Removed serverStatus display as requested */}
           </div>
 
           {/* Right Side: Action Button */}

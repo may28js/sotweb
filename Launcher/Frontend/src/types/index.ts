@@ -27,3 +27,18 @@ export interface PatchNoteItem {
   content: string;
   highlight?: boolean;
 }
+
+export interface ServerStatus {
+  status: string;
+  onlinePlayers: number;
+  maxPlayers: number;
+  uptime: string;
+}
+
+export interface LauncherConfig {
+  realmlist: string;
+  websiteUrl: string;
+  registerUrl: string;
+  latestVersion: string;
+  downloadUrl: string;
+}

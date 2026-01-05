@@ -9,15 +9,15 @@ namespace StoryOfTime.Server.Data
         {
         }
 
-        public DbSet<User> Users { get; set; }
-        public DbSet<News> News { get; set; }
-        public DbSet<ShopCategory> ShopCategories { get; set; }
-        public DbSet<ShopOrder> ShopOrders { get; set; }
-        public DbSet<UserPointLog> UserPointLogs { get; set; }
-        public DbSet<GameServerSetting> GameServerSettings { get; set; }
-        public DbSet<ShopItem> ShopItems { get; set; }
-        public DbSet<Comment> Comments { get; set; }
-        public DbSet<ServerStatusLog> ServerStatusLogs { get; set; }
-        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+        public DbSet<User> Users { get; set; } = default!;
+        public DbSet<News> News { get; set; } = default!;
+        public DbSet<ShopCategory> ShopCategories { get; set; } = default!;
+        public DbSet<ShopOrder> ShopOrders { get; set; } = default!;
+        public DbSet<UserPointLog> UserPointLogs { get; set; } = default!;
+        public DbSet<GameServerSetting> GameServerSettings { get; set; } = default!;
+        public DbSet<ShopItem> ShopItems { get; set; } = default!;
+        public DbSet<Comment> Comments { get; set; } = default!;
+        public DbSet<ServerStatusLog> ServerStatusLogs { get; set; } = default!;
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; } = default!;
     }
 }
