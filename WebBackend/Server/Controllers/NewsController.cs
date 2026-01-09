@@ -20,14 +20,24 @@ namespace StoryOfTime.Server.Controllers
 
         // GET: api/News
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<News>>> GetNews([FromQuery] string? type = null)
+        public async Task<ActionResult<IEnumerable<News>>> GetNews([FromQuery] string? type = null, [FromQuery] string? platform = null)
         {
             var query = _context.News.AsQueryable();
 
+            // 1. Filter by specific type if requested
             if (!string.IsNullOrEmpty(type))
             {
                 query = query.Where(n => n.Type == type);
             }
+
+            // 2. Platform filtering logic (Memo Section 2)
+            // If platform is "web", exclude Launcher-specific news
+            if (string.Equals(platform, "web", StringComparison.OrdinalIgnoreCase))
+            {
+                var hiddenTypes = new[] { "LauncherUpdate", "TechSpec", "ClientPatch" };
+                query = query.Where(n => !hiddenTypes.Contains(n.Type));
+            }
+            // If platform is "launcher" or null, return all (default behavior)
 
             return await query.OrderByDescending(n => n.CreatedAt).ToListAsync();
         }

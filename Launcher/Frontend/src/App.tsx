@@ -1,49 +1,125 @@
 import React, { useState, useEffect } from 'react';
 import LoginPage from './LoginPage';
-import { launcherService } from './services/api';
-import type { ServerStatus, LauncherConfig } from './types';
+import { launcherService, authService } from './services/api';
+import type { User } from './types';
 import { 
-  Sword,
-  Ghost, 
-  Shield, 
-  Settings,
+  Play, 
+  Pause, 
   Minus, 
-  X,
-  FolderSearch,
-  ChevronUp,
-  ShoppingBag,
-  History,
-  Gem,
-  Search,
-  Check,
-  Star,
-  Play,
-  Pause,
-  TriangleAlert
+  X, 
+  Users, 
+  ShoppingCart, 
+  Newspaper, 
+  Rocket, 
+  Settings, 
+  LogOut
 } from 'lucide-react';
 
-// Type for Game Status
-type GameStatus = 'not_installed' | 'installing' | 'updating' | 'ready' | 'playing';
+import GamePage from './components/GamePage';
+import SocialPage from './components/SocialPage';
+import StorePage from './components/StorePage';
+import NewsPage from './components/NewsPage';
+import DevPage from './components/DevPage';
+import PluginsPage from './components/PluginsPage';
+
+// Host-aligned State Enum
+const LauncherState = {
+  Checking: 0,
+  Install: 1,
+  Update: 2,
+  Ready: 3,
+  Working: 4,
+  Playing: 5,
+  Error: 6
+} as const;
+
+type LauncherStateType = typeof LauncherState[keyof typeof LauncherState];
+
+interface LauncherStatus {
+  State: LauncherStateType;
+  Message: string;
+  Progress: number;
+  Speed: string;
+}
+
+type Tab = 'game' | 'social' | 'store' | 'news' | 'dev' | 'plugins';
+type GameStatus = 'not_installed' | 'installing' | 'updating' | 'ready' | 'playing' | 'checking' | 'error';
+
+const NavItem = ({ icon, active, onClick }: { icon: React.ReactNode, active: boolean, onClick: () => void }) => (
+  <button 
+    onClick={onClick}
+    className={`w-full p-3 transition-all duration-300 group relative flex justify-center items-center ${active ? 'bg-gradient-to-r from-amber-500/20 to-transparent text-amber-500' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+  >
+    {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500" />}
+    {icon}
+  </button>
+);
+
+const TopNavLink = ({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) => (
+  <button 
+    onClick={onClick}
+    className={`relative px-1 py-4 transition-colors ${active ? 'text-amber-400' : 'text-gray-400 hover:text-gray-200'}`}
+  >
+    {label}
+    {active && (
+      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]"></span>
+    )}
+  </button>
+);
 
 function App() {
-  const [activeTab, setActiveTab] = useState('game');
+  const [activeTab, setActiveTab] = useState<Tab>('game');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState<string>('');
+  // const [userError, setUserError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [gameStatus, setGameStatus] = useState<GameStatus>('not_installed');
+  
+  // Game State
+  const [gameStatus, setGameStatus] = useState<GameStatus>('checking');
+  const [statusMessage, setStatusMessage] = useState<string>('正在初始化...');
   const [progress, setProgress] = useState(0); // 0-100
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [installPath, setInstallPath] = useState<string | null>(null);
   const [downloadSpeed, setDownloadSpeed] = useState('0 KB/s');
-  // Removed serverStatus state as requested
-  // const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
-  const [launcherConfig, setLauncherConfig] = useState<LauncherConfig | null>(null);
+  
+  const [isPaused, setIsPaused] = useState(false);
+  const [operationType, setOperationType] = useState<'install' | 'update'>('install');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Client Discovery State
+  const [discoveredClients, setDiscoveredClients] = useState<string[]>([]);
+  const [showClientSelector, setShowClientSelector] = useState(false);
+
+  // const [launcherConfig, setLauncherConfig] = useState<LauncherConfig | null>(null); // Unused
 
   useEffect(() => {
+    // Check for existing token
+    const token = localStorage.getItem('auth_token');
+    const storedUsername = localStorage.getItem('auth_username');
+    if (token) {
+        setIsLoggedIn(true);
+        if (storedUsername) setUsername(storedUsername);
+        
+        // Fetch fresh user info
+        authService.getMe(token).then(u => {
+            setUser(u);
+            setUsername(u.username);
+            // setUserError(null);
+        }).catch(err => {
+            console.error("Failed to restore session", err);
+            // If 401, token is invalid/expired. Logout.
+            if (err.message && err.message.includes('401')) {
+                console.log("Session expired, logging out.");
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('auth_username');
+                setIsLoggedIn(false);
+                setUser(null);
+            }
+        });
+    }
+
     const initConfig = async () => {
         const config = await launcherService.getConfig();
-        setLauncherConfig(config);
+        // setLauncherConfig(config);
         // @ts-ignore
         if (window.chrome?.webview) {
             // @ts-ignore
@@ -56,62 +132,69 @@ function App() {
     initConfig();
   }, []);
 
-  // Removed server status fetching effect
-  /*
-  useEffect(() => {
-    const fetchStatus = async () => {
-        const status = await launcherService.getStatus();
-        setServerStatus(status);
-    };
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 60000); 
-    return () => clearInterval(interval);
-  }, []);
-  */
-
   // IPC Handling
   useEffect(() => {
     // @ts-ignore
     if (window.chrome?.webview) {
         // @ts-ignore
         const messageHandler = (event: any) => {
-            const message = event.data;
-            if (message) {
-                switch (message.type) {
-                    case 'game_status':
-                         // Reset progress on status change
-                         if (message.payload.status !== 'installing' && message.payload.status !== 'updating') {
-                             setProgress(0);
-                         }
-                         if (message.payload.path) setInstallPath(message.payload.path);
+                  const message = event.data;
+                  console.log("[Frontend] Received IPC:", message);
+                  if (message && message.type === 'state_update') {
+                      const status = message.payload as LauncherStatus;
+                      console.log("[Frontend] State Update:", status);
+                      
+                      setStatusMessage(status.Message);
+                setProgress(status.Progress);
+                setDownloadSpeed(status.Speed);
 
-                         if (message.payload.status === 'ready') {
-                             setGameStatus('ready');
-                         } else if (message.payload.status === 'not_installed') {
-                             setGameStatus('not_installed');
-                         }
-                         break;
-                    case 'game_launched':
-                        setGameStatus('playing');
-                        setTimeout(() => setGameStatus('ready'), 5000);
+                switch (status.State) {
+                    case LauncherState.Checking:
+                        setGameStatus('checking');
                         break;
-                    case 'download_progress':
-                        setGameStatus('installing');
-                        setProgress(message.payload.progress);
-                        if (message.payload.speed) setDownloadSpeed(message.payload.speed);
+                    case LauncherState.Install:
+                        setGameStatus('not_installed');
+                        setOperationType('install');
                         break;
-                    case 'download_complete':
+                    case LauncherState.Update:
+                        setGameStatus('updating');
+                        setOperationType('update');
+                        break;
+                    case LauncherState.Ready:
                         setGameStatus('ready');
-                        setProgress(100);
-                        setIsPaused(false);
                         break;
-                    case 'download_error':
-                        console.error("Download Error:", message.payload);
-                        setIsPaused(true);
+                    case LauncherState.Working:
+                        // Visually map Working to Installing or Updating based on context, 
+                        // or just generic 'installing' style (blue/amber bar)
+                        // If previous state was updating, keep it updating to show correct text?
+                        // Actually 'statusMessage' from Host is accurate (e.g. "Downloading...", "Verifying...")
+                        // We just need a GameStatus that triggers the Progress Bar.
+                        // 'installing' enables the progress bar in current UI.
+                        setGameStatus('installing');
                         break;
-                    case 'error':
-                        console.error("IPC Error:", message.payload);
+                    case LauncherState.Playing:
+                        setGameStatus('playing');
                         break;
+                    case LauncherState.Error:
+                        setGameStatus('error');
+                        break;
+                }
+            } else if (message && message.type === 'error') {
+                console.error("IPC Error:", message.payload);
+            } else if (message && message.type === 'discovered_clients') {
+                console.log("[Frontend] Discovered Clients Message:", message.payload);
+                
+                let paths: string[] = [];
+                if (Array.isArray(message.payload)) {
+                    paths = message.payload;
+                } else if (message.payload && Array.isArray(message.payload.paths)) {
+                    paths = message.payload.paths;
+                }
+                
+                if (paths.length > 0) {
+                    console.log("[Frontend] Showing Client Selector with paths:", paths);
+                    setDiscoveredClients(paths);
+                    setShowClientSelector(true);
                 }
             }
         };
@@ -132,12 +215,12 @@ function App() {
     } else {
         // Browser fallback (dev mode)
         setTimeout(() => setIsLoading(false), 2000);
+        setStatusMessage("开发模式 - 无后端连接");
     }
   }, []);
 
   // Handle window dragging via Host
   const handleDrag = (e: React.MouseEvent) => {
-    // Only drag on left click and if not clicking a button/interactive element
     if (e.button === 0) {
       // @ts-ignore
       if (window.chrome?.webview) {
@@ -147,33 +230,43 @@ function App() {
     }
   };
 
-  // Real function to trigger actions
+  // Client Import Handler
+  const handleImportClient = (path: string) => {
+    console.log("Importing client from:", path);
+    // @ts-ignore
+    if (window.chrome?.webview) {
+        // @ts-ignore
+        window.chrome.webview.postMessage({ 
+            type: 'import_game', 
+            payload: { path: path } 
+        });
+    }
+    setShowClientSelector(false);
+  };
+
+  // Main Action Trigger
    const handleGameAction = () => {
      // @ts-ignore
      if (window.chrome?.webview) {
-         if (gameStatus === 'not_installed') {
-           if (installPath) {
-               // If path is set but not installed, start installation/download
-               // Immediate feedback
-               setGameStatus('installing');
-               setProgress(0);
-               
-               // @ts-ignore
-               window.chrome.webview.postMessage({ 
-                 type: 'start_download',
-                 payload: { url: launcherConfig?.downloadUrl }
-               });
-           } else {
-               setShowInstallPrompt(true);
-           }
-        } else if (gameStatus === 'ready') {
-             // @ts-ignore
-             window.chrome.webview.postMessage({ type: 'launch_game' });
-         }
+         // Send generic action signal, Host decides what to do based on its state
+         // @ts-ignore
+         window.chrome.webview.postMessage({ type: 'main_action' });
      } else {
         // Browser Mock
+        console.log("Main Action Clicked (Dev Mode)");
         if (gameStatus === 'not_installed') {
-            setShowInstallPrompt(true);
+            setGameStatus('installing');
+            let p = 0;
+            const timer = setInterval(() => {
+                p += 1;
+                setProgress(p);
+                setStatusMessage(`下载中... ${p}%`);
+                if (p >= 100) {
+                    clearInterval(timer);
+                    setGameStatus('ready');
+                    setStatusMessage("准备就绪");
+                }
+            }, 50);
         } else if (gameStatus === 'ready') {
             setGameStatus('playing');
             setTimeout(() => setGameStatus('ready'), 3000); 
@@ -182,17 +275,13 @@ function App() {
   };
 
   const togglePause = () => {
-    if (isPaused) {
-        // Resume
-        // @ts-ignore
-        if (window.chrome?.webview) window.chrome.webview.postMessage({ type: 'resume_download' });
-        setIsPaused(false);
-    } else {
-        // Pause
-        // @ts-ignore
-        if (window.chrome?.webview) window.chrome.webview.postMessage({ type: 'pause_download' });
-        setIsPaused(true);
-    }
+    // Host doesn't support pause yet in this version of code analysis, 
+    // but we can keep the UI button non-functional or send message that Host ignores.
+    // For now, let's just log it.
+    console.log("Pause toggle requested");
+    // @ts-ignore
+    if (window.chrome?.webview) window.chrome.webview.postMessage({ type: 'toggle_pause' });
+    setIsPaused(!isPaused);
   };
 
   const handleMinimize = () => {
@@ -207,18 +296,90 @@ function App() {
     else console.log('Close');
   };
 
+  const getButtonConfig = () => {
+    switch (gameStatus) {
+        case 'checking':
+            return {
+                text: '正在检查...',
+                className: 'bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-400/50 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]',
+                disabled: true
+            };
+        case 'not_installed':
+            const hasDiscovered = discoveredClients.length > 0;
+            return {
+                text: hasDiscovered ? '安装游戏' : '下载游戏',
+                className: hasDiscovered
+                    ? 'bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-400/50 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]'
+                    : 'bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 border-emerald-400/50 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]',
+                disabled: false
+            };
+        case 'installing':
+            if (operationType === 'update') {
+                return {
+                    text: '正在更新...',
+                    className: 'bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 border-emerald-400/50 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]',
+                    disabled: true
+                };
+            }
+            if (statusMessage.includes('导入')) {
+                return {
+                    text: '正在导入...',
+                    className: 'bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 border-blue-400/50 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]',
+                    disabled: true
+                };
+            }
+            return {
+                text: '正在下载...',
+                className: 'bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 border-emerald-400/50 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]',
+                disabled: true
+            };
+        case 'updating':
+            return {
+                text: '更新游戏',
+                className: 'bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 border-emerald-400/50 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]',
+                disabled: false
+            };
+        case 'ready':
+            return {
+                text: '开始游戏',
+                className: 'bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 border-amber-400/50 text-black shadow-[0_0_20px_rgba(245,158,11,0.3)]',
+                disabled: false
+            };
+        case 'playing':
+            return {
+                text: '游戏中',
+                className: 'bg-gradient-to-b from-amber-500 to-amber-600 border-amber-400/50 text-black opacity-80 cursor-not-allowed',
+                disabled: true
+            };
+        case 'error':
+            return {
+                text: '重试',
+                className: 'bg-gradient-to-b from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border-red-500/50 text-white shadow-[0_0_20px_rgba(220,38,38,0.3)]',
+                disabled: false
+            };
+        default:
+            return {
+                text: '请稍候...',
+                className: 'bg-gray-600 text-gray-400',
+                disabled: true
+            };
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'game':
         return <GamePage />;
       case 'social':
-        return <SocialPage />;
-      case 'store':
-        return <StorePage />;
-      case 'news':
-        return <NewsPage />;
-      case 'dev':
+      return <SocialPage />;
+    case 'store':
+      return <StorePage user={user} />;
+    case 'news':
+      return <NewsPage />;
+    case 'dev':
         return <DevPage />;
+      case 'plugins':
+        return <PluginsPage />;
       default:
         return <GamePage />;
     }
@@ -226,26 +387,55 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="absolute inset-0 z-50 bg-[#0f0518] flex flex-col items-center justify-center">
-        <div className="relative w-24 h-24 mb-8">
-          <div className="absolute inset-0 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div>
-          <div className="absolute inset-4 border-4 border-purple-500/30 border-b-purple-500 rounded-full animate-[spin_3s_linear_infinite_reverse]"></div>
-          <div className="absolute inset-0 flex items-center justify-center text-amber-500 font-bold animate-pulse">
-            S
-          </div>
+      <div className="absolute inset-0 z-50 flex flex-col items-center justify-center"
+           style={{
+               backgroundColor: '#222222',
+               backgroundImage: "url('/images/general-page-bg.avif')",
+               backgroundSize: 'cover',
+               backgroundPosition: 'center',
+               backgroundRepeat: 'no-repeat'
+           }}
+      >
+        <div className="relative z-10 flex flex-col items-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mb-8"></div>
         </div>
-        <div className="text-amber-500/50 font-mono tracking-[0.5em] text-sm animate-pulse">INITIALIZING</div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0f0518] text-white font-sans select-none border border-white/5 rounded-lg relative">
+    <div className="flex h-screen w-screen overflow-hidden text-white font-sans select-none border border-white/5 rounded-lg relative">
       
+      {/* Global Background Image */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/images/general-page-bg.avif" className="w-full h-full object-cover" alt="Background" />
+      </div>
+
       {showLoginModal && (
         <LoginPage 
           onLogin={() => {
             setIsLoggedIn(true);
+            const storedUsername = localStorage.getItem('auth_username');
+            const token = localStorage.getItem('auth_token');
+            if (storedUsername) setUsername(storedUsername);
+            if (token) {
+                authService.getMe(token).then(u => {
+                    setUser(u);
+                    // setUserError(null);
+                }).catch(err => {
+                    console.error(err);
+                    // If 401, token is invalid. Logout.
+                    if (err.message && err.message.includes('401')) {
+                        console.log("Login session failed immediately, logging out.");
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('auth_username');
+                        setIsLoggedIn(false);
+                        setUser(null);
+                        // Optional: Show error toast or reopen login modal
+                        alert("登录会话无效，请重试");
+                    }
+                });
+            }
             setShowLoginModal(false);
           }} 
           onDrag={handleDrag}
@@ -253,20 +443,80 @@ function App() {
         />
       )}
 
+      {/* Client Selector Modal */}
+      {showClientSelector && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+           <div className="w-[600px] bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="h-14 flex items-center justify-between px-6 border-b border-white/5 bg-white/5" onMouseDown={handleDrag}>
+                  <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-500">
+                          <Settings size={18} />
+                      </div>
+                      <span className="font-bold text-lg text-gray-100">发现本地客户端</span>
+                  </div>
+                  <button onClick={() => setShowClientSelector(false)} className="text-gray-400 hover:text-white transition-colors">
+                      <X size={20} />
+                  </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 flex flex-col gap-4">
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                      启动器在您的电脑中发现了以下魔兽世界 3.3.5a 客户端。<br/>
+                      您可以直接导入其中一个，或者点击“取消”来重新下载纯净客户端。
+                  </p>
+                  
+                  <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                      {discoveredClients.map((path, idx) => (
+                          <button 
+                              key={idx}
+                              onClick={() => handleImportClient(path)}
+                              className="group flex flex-col items-start p-4 rounded-lg bg-white/5 hover:bg-amber-500/10 border border-white/5 hover:border-amber-500/30 transition-all text-left"
+                          >
+                              <div className="flex items-center gap-2 w-full">
+                                  <span className="text-amber-500 font-mono text-xs px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                                      3.3.5a
+                                  </span>
+                                  <span className="text-gray-200 font-medium truncate flex-1 group-hover:text-amber-400 transition-colors">
+                                      {path}
+                                  </span>
+                              </div>
+                              <span className="text-xs text-gray-500 mt-1 pl-1">点击导入此客户端</span>
+                          </button>
+                      ))}
+                  </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-black/20 border-t border-white/5 flex justify-end gap-3">
+                  <button 
+                      onClick={() => {
+                          setShowClientSelector(false);
+                          setDiscoveredClients([]);
+                      }}
+                      className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
+                  >
+                      忽略并下载新游戏
+                  </button>
+              </div>
+           </div>
+        </div>
+      )}
+
       {/* Sidebar */}
-      <aside className="w-[70px] flex flex-col items-center py-6 bg-black/20 border-r border-white/5 z-20 backdrop-blur-sm">
+      <aside className="w-[70px] flex flex-col items-center py-6 z-20">
         {/* Logo */}
-        <div className="w-14 h-14 mb-10 cursor-pointer hover:scale-110 transition-transform group relative">
-             <img src="/images/icons2-.png" alt="Logo" className="w-full h-full object-contain absolute inset-0 transition-opacity duration-300 group-hover:opacity-0" />
-             <img src="/images/icons1.png" alt="Logo Hover" className="w-full h-full object-contain absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="w-[53px] h-[53px] mb-10 cursor-pointer hover:scale-110 transition-transform relative mx-auto">
+             <img src="/images/sot.png" alt="Logo" className="w-full h-full object-contain" />
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 flex flex-col gap-8 w-full">
-          <NavItem icon={<Sword size={24} />} active={activeTab === 'game'} onClick={() => setActiveTab('game')} />
-          <NavItem icon={<Ghost size={24} />} active={activeTab === 'social'} onClick={() => setActiveTab('social')} />
-          <NavItem icon={<ShoppingBag size={24} />} active={activeTab === 'store'} onClick={() => setActiveTab('store')} />
-          <NavItem icon={<Shield size={24} />} active={activeTab === 'news'} onClick={() => setActiveTab('news')} />
+          <NavItem icon={<Users size={24} />} active={activeTab === 'social'} onClick={() => setActiveTab('social')} />
+          <NavItem icon={<ShoppingCart size={24} />} active={activeTab === 'store'} onClick={() => setActiveTab('store')} />
+          <NavItem icon={<Newspaper size={24} />} active={activeTab === 'news'} onClick={() => setActiveTab('news')} />
+          <NavItem icon={<Rocket size={24} />} active={activeTab === 'dev'} onClick={() => setActiveTab('dev')} />
         </nav>
 
         {/* Bottom Actions */}
@@ -278,14 +528,7 @@ function App() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col relative bg-[#0f0518]">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-           <img src="/images/bg.jpg" className="w-full h-full object-cover" alt="Background" />
-           {/* Overlay to ensure text readability */}
-           <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
-           <div className="absolute inset-0 bg-gradient-to-t from-[#0f0518] via-transparent to-transparent"></div>
-        </div>
+      <div className="flex-1 flex flex-col relative">
 
         {/* Window Controls - Absolute Top Right */}
         <div className="absolute top-0 right-0 z-50 flex">
@@ -314,10 +557,7 @@ function App() {
             onMouseDown={(e) => e.stopPropagation()}
           >
             <TopNavLink label="游戏" active={activeTab === 'game'} onClick={() => setActiveTab('game')} />
-            <TopNavLink label="社交" active={activeTab === 'social'} onClick={() => setActiveTab('social')} />
-            <TopNavLink label="商城" active={activeTab === 'store'} onClick={() => setActiveTab('store')} />
-            <TopNavLink label="资讯" active={activeTab === 'news'} onClick={() => setActiveTab('news')} />
-            <TopNavLink label="开发计划" active={activeTab === 'dev'} onClick={() => setActiveTab('dev')} />
+            <TopNavLink label="插件/资源" active={activeTab === 'plugins'} onClick={() => setActiveTab('plugins')} />
           </div>
 
           {/* Right Status */}
@@ -327,43 +567,82 @@ function App() {
           >
             {isLoggedIn ? (
               /* Integrated Profile */
-              <div className="flex items-center gap-4 group cursor-pointer">
-                
-                {/* Info Column (Name + Currency) */}
-                <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-2">
-                       <span className="text-base font-bold text-gray-200 group-hover:text-amber-400 transition-colors">TimeWalker</span>
-                       <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_5px_#22c55e]"></div>
-                    </div>
+              <div className="relative group/profile py-2">
+                 {/* Avatar (Trigger) */}
+                 <div className="w-10 h-10 rounded-full overflow-hidden cursor-pointer shadow-lg transition-all hover:scale-105">
+                    <img 
+                       src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`} 
+                       className="w-full h-full object-cover bg-[#1a0b2e]" 
+                       alt="Avatar" 
+                    />
+                 </div>
+                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#1a0b2e] rounded-full flex items-center justify-center pointer-events-none">
+                    <div className="w-2 h-2 bg-green-500 rounded-full border border-[#1a0b2e]"></div>
+                 </div>
+
+                 {/* Popup Menu (Hidden by default, block on group-hover) */}
+                 <div className="absolute right-[115%] top-0 invisible opacity-0 group-hover/profile:visible group-hover/profile:opacity-100 transition-all duration-200 z-50">
+                    {/* Arrow (Right side of menu) */}
+                    <div className="absolute top-[20px] -translate-y-1/2 -right-[5px] w-2.5 h-2.5 bg-[#1a1a1a] border-t border-r border-white/10 rotate-45 z-10"></div>
                     
-                    {/* Compact Currency */}
-                    <div className="flex items-center gap-3 text-xs bg-black/40 px-2 py-0.5 rounded border border-white/5">
-                       <div className="flex items-center gap-1 text-emerald-400">
-                          <Gem size={10} className="fill-emerald-400/20" /> 6
-                       </div>
-                       <div className="w-px h-3 bg-white/10"></div>
-                       <div className="flex items-center gap-1 text-amber-400">
-                          <span className="text-[10px] opacity-70">VP</span> 120
-                       </div>
+                    {/* Menu Body */}
+                    <div className="w-52 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl p-3 flex flex-col gap-3 relative z-0">
+                        {/* User Info */}
+                        <div className="flex items-center gap-3 border-b border-white/5 pb-2">
+                            <div className="w-8 h-8 rounded-full bg-white/5 p-0.5">
+                               <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`} className="w-full h-full rounded-full" alt="Avatar" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-sm text-gray-100">{username}</span>
+                                <span className="text-[10px] text-green-400 flex items-center gap-1">
+                                    <div className="w-1 h-1 rounded-full bg-green-500"></div> 在线
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Currencies */}
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between items-center p-2 bg-black/40 rounded border border-white/5 hover:border-amber-500/20 transition-colors cursor-default">
+                                <div className="flex items-center gap-1.5 text-amber-400 text-xs font-medium">
+                                     <img src="/images/currency-red.png" className="w-3 h-3 object-contain" alt="Points" />
+                                     <span>时光碎片</span>
+                                </div>
+                                <span className="font-mono font-bold text-xs text-gray-200">{user ? user.points : '---'}</span>
+                            </div>
+                            <div className="flex justify-between items-center p-2 bg-black/40 rounded border border-white/5 hover:border-emerald-500/20 transition-colors cursor-default">
+                                <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                                     <img src="/images/currency-green-large.png" className="w-3 h-3 object-contain" alt="VP" />
+                                     <span>时光之尘</span>
+                                </div>
+                                <span className="font-mono font-bold text-xs text-gray-200">{user ? 0 : '---'}</span>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="pt-1">
+                            <button 
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  localStorage.removeItem('auth_token');
+                                  localStorage.removeItem('auth_username');
+                                  setIsLoggedIn(false);
+                                  setUser(null);
+                                  setUsername('');
+                              }}
+                              className="w-full py-1.5 flex items-center justify-center gap-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded transition-colors text-xs font-medium border border-transparent hover:border-white/5"
+                            >
+                                <LogOut size={14} /> 退出登录
+                            </button>
+                        </div>
                     </div>
-                </div>
-                
-                {/* Avatar */}
-                <div className="relative">
-                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 p-0.5 shadow-lg shadow-orange-900/40 group-hover:shadow-orange-500/20 transition-all">
-                      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" className="w-full h-full rounded-full bg-[#1a0b2e]" alt="Avatar" />
-                   </div>
-                   <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#1a0b2e] rounded-full flex items-center justify-center">
-                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#1a0b2e]"></div>
-                   </div>
-                </div>
+                 </div>
               </div>
             ) : (
               <button 
                 onClick={() => setShowLoginModal(true)}
-                className="px-6 py-2 bg-white/5 hover:bg-white/10 text-gray-300 font-medium rounded-lg border border-white/10 hover:border-white/30 transition-all active:scale-95"
+                className="px-4 py-1.5 text-amber-500 font-medium text-sm rounded-lg border border-amber-500/50 hover:bg-amber-500/10 hover:border-amber-500 transition-all active:scale-95"
               >
-                登录账户
+                登录
               </button>
             )}
           </div>
@@ -373,21 +652,18 @@ function App() {
         <main className="flex-1 overflow-y-auto px-10 py-6 relative z-10 custom-scrollbar scroll-smooth">
           
           {renderContent()}
-          
-          {/* Spacer for bottom bar */}
-          <div className="h-40"></div>
         </main>
 
-        {/* Bottom Action Bar */}
-        <footer className="h-20 bg-[#0a0310]/90 backdrop-blur-md border-t border-white/5 absolute bottom-0 left-0 right-0 flex items-center px-8 z-30 gap-8">
+        {/* Footer */}
+        <footer className="h-20 border-t border-white/5 flex items-center px-8 z-30 gap-8 shrink-0">
           
           {/* Left Side: Progress Bar Area */}
           <div className="flex-1 flex items-center h-full">
-            {(gameStatus === 'installing' || gameStatus === 'updating') && (
+            {(gameStatus === 'installing') && (
                 <div className="w-[85%] flex items-center gap-4 animate-in fade-in slide-in-from-left-4 duration-500">
                     <div className="flex-1 flex flex-col gap-1.5">
                         {/* Progress Track */}
-                        <div className="h-2 bg-black/40 rounded-full overflow-hidden shadow-inner border border-white/5 relative">
+                        <div className="h-3 bg-black/40 rounded-full overflow-hidden shadow-inner border border-white/5 relative">
                             {/* Progress Fill */}
                             <div 
                                 className={`h-full relative transition-all duration-300 ease-out ${isPaused ? 'bg-gray-600' : 'bg-amber-600'}`}
@@ -395,8 +671,8 @@ function App() {
                             >
                                 {/* Shimmer Effect (only when not paused) */}
                                 {!isPaused && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full animate-[shimmer_2s_infinite]"></div>}
-                                {/* Glowing Tip */}
-                                <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/30 blur-[2px] shadow-[0_0_8px_rgba(255,255,255,0.5)]"></div>
+                                {/* Shiny Tip */}
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_6px_2px_rgba(255,255,255,0.8)]"></div>
                             </div>
                         </div>
                         {/* Status Info */}
@@ -406,7 +682,8 @@ function App() {
                                     <span className="text-amber-500/80">已暂停</span>
                                 ) : (
                                     <>
-                                        <span>{gameStatus === 'installing' ? '正在下载游戏客户端...' : '正在校验游戏补丁...'}</span>
+                                        {/* Use Dynamic Status Message from Host */}
+                                        <span>{statusMessage}</span>
                                     </>
                                 )}
                             </span>
@@ -418,7 +695,7 @@ function App() {
                         </div>
                     </div>
                     
-                    {/* Pause/Resume Button */}
+                    {/* Pause/Resume Button - Visual Only for now */}
                     <button 
                         onClick={togglePause}
                         className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-amber-500 border border-white/5 hover:border-amber-500/30 transition-all active:scale-95 shadow-lg"
@@ -427,70 +704,19 @@ function App() {
                     </button>
                 </div>
             )}
-            {/* Removed serverStatus display as requested */}
           </div>
 
           {/* Right Side: Action Button */}
           <div className="relative">
-             {/* Install Prompt Bubble */}
-             {showInstallPrompt && (
-                <div className="absolute bottom-full right-0 mb-4 w-96 bg-[#1a1120] border border-amber-500/30 rounded-xl p-4 shadow-2xl shadow-black/50 animate-in slide-in-from-bottom-2 fade-in duration-300 z-50">
-                    <div className="absolute -bottom-2 right-12 w-4 h-4 bg-[#1a1120] border-b border-r border-amber-500/30 transform rotate-45"></div>
-                    <div className="flex items-start gap-3 mb-3">
-                        <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
-                            <FolderSearch size={20} />
-                        </div>
-                        <p className="text-sm text-gray-300 leading-relaxed">
-                            如果您的电脑上已经有客户端，那么选择“是”，在您定位客户端路径后将使用已有的游戏。 选择“否”则通过网络下载游戏客户端，这将会花一些时间。
-                        </p>
-                    </div>
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={() => {
-                                setShowInstallPrompt(false);
-                                // @ts-ignore
-                                if (window.chrome?.webview) window.chrome.webview.postMessage({ type: 'select_install_path' });
-                            }}
-                            className="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium py-1.5 rounded transition-colors"
-                        >
-                            是
-                        </button>
-                        <button 
-                            onClick={() => {
-                                setShowInstallPrompt(false);
-                                // @ts-ignore
-                                if (window.chrome?.webview) window.chrome.webview.postMessage({ type: 'install_game' });
-                                
-                                // Update UI immediately to avoid "Start Install" appearing
-                                setGameStatus('installing');
-                                setProgress(0);
-                            }}
-                            className="flex-1 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-sm font-medium py-1.5 rounded transition-colors"
-                        >
-                            否
-                        </button>
-                    </div>
-                </div>
-             )}
-
             <div className="flex items-center group relative">
               {/* Main Action Button */}
               <button 
-                className={`h-12 w-48 font-bold text-lg rounded-lg shadow-xl transition-all active:scale-95 flex items-center justify-center border ${
-                  gameStatus === 'ready' || gameStatus === 'playing' 
-                    ? 'bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 border-amber-400/50 text-black shadow-[0_0_20px_rgba(245,158,11,0.3)]'
-                    : 'bg-gradient-to-b from-[#2d1b4e] to-[#1a0b2e] hover:from-[#3d2b5e] hover:to-[#2a1b3e] border-white/10 text-gray-200 shadow-lg shadow-purple-900/30'
-                }`}
+                className={`h-12 w-48 font-bold text-lg rounded-lg shadow-xl transition-all active:scale-95 flex items-center justify-center border ${getButtonConfig().className}`}
                 onClick={handleGameAction}
-                disabled={gameStatus === 'installing' || gameStatus === 'updating'}
+                disabled={getButtonConfig().disabled}
               >
                  <span className="tracking-wide">
-                    {gameStatus === 'not_installed' && !installPath && '安装游戏'}
-                    {gameStatus === 'not_installed' && installPath && '开始安装'}
-                    {gameStatus === 'installing' && '安装中...'}
-                    {gameStatus === 'updating' && '更新中...'}
-                    {gameStatus === 'ready' && '开始游戏'}
-                    {gameStatus === 'playing' && '游戏中'}
+                    {getButtonConfig().text}
                  </span>
               </button>
             </div>
@@ -500,408 +726,5 @@ function App() {
     </div>
   );
 }
-
-// --- Sub Components ---
-
-const NavItem = ({ icon, active, onClick }: { icon: React.ReactNode, active?: boolean, onClick?: () => void }) => (
-  <div 
-    className={`relative w-full flex justify-center cursor-pointer group`}
-    onClick={onClick}
-  >
-    {active && (
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 rounded-r shadow-[0_0_10px_#f59e0b]"></div>
-    )}
-    <div className={`p-3 rounded-xl transition-all duration-300 ${active ? 'text-amber-500 bg-amber-500/10' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
-      {icon}
-    </div>
-  </div>
-);
-
-const TopNavLink = ({ label, active, onClick }: { label: string, active?: boolean, onClick?: () => void }) => (
-  <div 
-    className="relative cursor-pointer h-16 flex items-center group"
-    onClick={onClick}
-  >
-    <span className={`transition-colors ${active ? 'text-amber-400 font-bold' : 'text-gray-400 group-hover:text-gray-200'}`}>
-      {label}
-    </span>
-    {active && (
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 shadow-[0_-2px_8px_rgba(245,158,11,0.5)]"></div>
-    )}
-  </div>
-);
-
-const PatchNote = ({ version, date, content, highlight }: { version: string, date: string, content: string, highlight?: boolean }) => (
-  <div className={`p-3 rounded-lg border cursor-default transition-colors ${highlight ? 'bg-indigo-900/20 border-indigo-500/30 hover:bg-indigo-900/30' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
-    <div className="flex justify-between items-center mb-1">
-       <span className="px-1.5 py-0.5 bg-white/10 rounded text-[10px] text-indigo-300 font-mono">{version}</span>
-       <span className="text-xs text-gray-500">{date}</span>
-    </div>
-    <p className={`text-xs leading-relaxed ${highlight ? 'text-gray-200' : 'text-gray-400'}`}>
-       {highlight && <span className="w-1.5 h-1.5 inline-block rounded-full bg-red-500 mr-1.5"></span>}
-       {content}
-    </p>
-  </div>
-);
-
-const NewsCard = ({ tag, title, desc, image }: { tag: string, title: string, desc: string, image: string }) => (
-  <div className="bg-black/40 rounded-xl overflow-hidden border border-white/5 hover:border-white/20 transition-all group flex flex-col h-full cursor-pointer hover:shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-1">
-     <div className="h-32 overflow-hidden relative">
-        <img src={image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
-        <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/60 backdrop-blur rounded text-xs text-amber-400 font-bold border border-amber-500/20">
-          🏷️ {tag}
-        </div>
-     </div>
-     <div className="p-4 flex-1 flex flex-col">
-        <h4 className="font-bold text-gray-100 mb-2 group-hover:text-amber-400 transition-colors line-clamp-1">{title}</h4>
-        <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{desc}</p>
-        <div className="mt-auto pt-3 text-[10px] text-gray-600">2024-12-10</div>
-     </div>
-  </div>
-);
-
-// --- Store Components ---
-
-const ShopFilter = ({ label, options }: { label: string, options: string[] }) => (
-  <div className="flex items-center gap-2">
-    <span className="text-gray-400 text-sm">{label}:</span>
-    <div className="relative group">
-       <select className="appearance-none bg-black/40 text-gray-200 text-sm pl-3 pr-8 py-1.5 rounded border border-white/10 hover:border-amber-500/50 focus:border-amber-500 outline-none cursor-pointer transition-colors">
-          {options.map(opt => <option key={opt}>{opt}</option>)}
-       </select>
-       <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-         <ChevronUp size={12} className="rotate-180" />
-       </div>
-    </div>
-  </div>
-);
-
-interface ShopItem {
-  id: string;
-  title: string;
-  desc: string;
-  price: number;
-  originalPrice?: number;
-  currency: 'gem' | 'vote';
-  image: string;
-  tags: string[];
-  discount?: number;
-  featured?: boolean;
-}
-
-const ShopCard = ({ item }: { item: ShopItem }) => (
-  <div className="bg-[#150a20] rounded-xl overflow-hidden border border-white/5 hover:border-amber-500/30 transition-all group flex flex-col h-full hover:shadow-[0_0_20px_rgba(245,158,11,0.1)] hover:-translate-y-1 relative">
-      {/* Featured Badge */}
-      {item.featured && (
-        <div className="absolute top-0 right-0 z-10">
-           <div className="bg-amber-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg flex items-center gap-1 shadow-lg">
-              <Star size={10} className="fill-black" /> FEATURED
-           </div>
-        </div>
-      )}
-      
-      {/* Discount Badge */}
-      {item.discount && (
-        <div className="absolute top-3 left-3 z-10">
-           <div className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded shadow-lg">
-              -{item.discount}%
-           </div>
-        </div>
-      )}
-
-      {/* Image Area */}
-      <div className="h-40 overflow-hidden relative bg-black/20 p-4 flex items-center justify-center group-hover:bg-black/30 transition-colors">
-         <img src={item.image} alt={item.title} className="max-w-full max-h-full object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-500" />
-         
-         {/* Overlay Gradient */}
-         <div className="absolute inset-0 bg-gradient-to-t from-[#150a20] to-transparent opacity-80"></div>
-      </div>
-
-      {/* Content */}
-      <div className="p-4 flex-1 flex flex-col relative -mt-6">
-         <h3 className="font-bold text-lg text-gray-100 mb-1 group-hover:text-amber-400 transition-colors">{item.title}</h3>
-         <p className="text-xs text-gray-500 mb-3 line-clamp-2">{item.desc}</p>
-         
-         {/* Tags */}
-         <div className="flex flex-wrap gap-1.5 mb-4">
-            {item.tags.map(tag => (
-              <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400 border border-white/5">
-                {tag}
-              </span>
-            ))}
-         </div>
-
-         {/* Price & Action */}
-         <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
-             <div className="flex items-end gap-2">
-                {item.originalPrice && (
-                  <span className="text-xs text-gray-500 line-through mb-0.5">{item.originalPrice}</span>
-                )}
-                <div className={`flex items-center gap-1 font-bold text-lg ${item.currency === 'gem' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                   {item.price.toLocaleString()}
-                   {item.currency === 'gem' ? <Gem size={16} className="fill-amber-400/20" /> : <Gem size={16} className="fill-emerald-400/20" />}
-                </div>
-             </div>
-
-             <button className="w-10 h-10 rounded-full bg-amber-500 hover:bg-amber-400 text-black flex items-center justify-center shadow-lg shadow-amber-900/40 active:scale-90 transition-all group/btn" title="加入购物车">
-                <ShoppingBag size={18} className="group-hover/btn:animate-bounce" />
-             </button>
-         </div>
-      </div>
-  </div>
-);
-
-// --- Page Components ---
-
-const GamePage = () => (
-  <>
-    {/* Hero Section - Notification Bar */}
-    <div className="mb-8 flex h-10 w-full rounded overflow-hidden shadow-lg cursor-pointer group hover:scale-[1.01] transition-transform">
-       {/* Left Icon Area - Yellow */}
-       <div className="bg-amber-500 w-10 flex items-center justify-center text-black shrink-0">
-          <TriangleAlert size={18} className="animate-pulse" />
-       </div>
-       
-       {/* Right Content Area - White/Light Gray */}
-       <div className="flex-1 bg-gray-200 flex items-center px-4 relative overflow-hidden">
-          {/* Background Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-300"></div>
-          
-          <div className="relative z-10 flex items-center w-full gap-3">
-             <span className="text-amber-700 font-bold text-sm">[重要]</span>
-             <p className="text-gray-800 text-sm font-medium truncate flex-1">
-                2025年6月25日起战网通行证登录入口将分阶段逐步关闭，主要登录方式切换为网易账号。
-             </p>
-             <span className="text-gray-500 text-xs group-hover:text-amber-600 transition-colors">点击查看详情 &gt;</span>
-          </div>
-       </div>
-    </div>
-
-    {/* Featured Banner */}
-    <div className="w-full h-[320px] rounded-xl overflow-hidden relative group border border-white/10 shadow-2xl cursor-pointer">
-      <img 
-        src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2670&auto=format&fit=crop" 
-        alt="Winter Veil" 
-        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0f0518] via-[#0f0518]/50 to-transparent"></div>
-      
-      <div className="absolute bottom-0 left-0 p-8 w-2/3">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="px-2 py-0.5 bg-amber-600 text-white text-xs font-bold rounded shadow-lg shadow-amber-900/50">活动</span>
-            <span className="text-gray-300 text-sm flex items-center gap-1">
-              <span className="opacity-60">📅</span> 2024-12-15
-            </span>
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-2 group-hover:text-amber-400 transition-colors drop-shadow-md">
-            时光回溯：冬幕节的起源
-          </h2>
-          <p className="text-gray-300 leading-relaxed line-clamp-2 text-sm drop-shadow-sm">
-            克罗米发现了一个时间裂隙，冬幕节的庆祝活动似乎发生了一些奇妙的变化。在铁炉堡和奥格瑞玛寻找时间守护者领取特殊任务，赢取绝版坐骑。
-          </p>
-      </div>
-    </div>
-
-    {/* Info Grid */}
-    <div className="grid grid-cols-12 gap-6 mt-8">
-      {/* Server Status / Patch Notes */}
-      <div className="col-span-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/5 p-5 hover:border-white/10 transition-colors hover:bg-white/10">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="flex items-center gap-2 font-bold text-amber-400">
-              <span className="text-amber-500">⚡</span> 服务器动态
-            </h3>
-            <a href="#" className="text-xs text-gray-500 hover:text-white transition-colors">查看全部 &gt;</a>
-          </div>
-          
-          <div className="space-y-4">
-            <PatchNote 
-              version="Ver 3.3.5a.12" 
-              date="12-14"
-              content="修复了[时光之穴]斯坦索姆副本中阿尔萨斯有时会卡住的BUG。"
-              highlight
-            />
-            <PatchNote 
-              version="Ver 3.3.5a.11" 
-              date="12-12"
-              content="调整了奥杜尔[米米尔隆]困难模式的伤害数值，使其更符合当前版本装等。"
-            />
-            <PatchNote 
-              version="Ver 3.3.5a.10" 
-              date="12-09"
-              content="为了保持阵营平衡，暂时开启免费转阵营服务。"
-            />
-          </div>
-      </div>
-
-      {/* News Cards */}
-      <div className="col-span-8 flex flex-col">
-          <div className="flex justify-between items-center mb-4 px-1">
-            <h3 className="font-bold text-gray-200">更多资讯</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-6 flex-1">
-            <NewsCard 
-              tag="新闻"
-              title="PVP 第8赛季：愤怒的角斗士"
-              desc="竞技场第8赛季即将结算。请各位角斗士做好准备，龙类坐骑和称号将在1月5日发放。"
-              image="https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2671&auto=format&fit=crop"
-            />
-            <NewsCard 
-              tag="社区"
-              title="社区精选：最美幻化大赛"
-              desc="本月的主题是“时光漫游者”。展示你最复古的装备搭配，赢取海量积分奖励。"
-              image="https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?q=80&w=2670&auto=format&fit=crop"
-            />
-          </div>
-      </div>
-    </div>
-  </>
-);
-
-const SocialPage = () => (
-  <div className="flex flex-col items-center justify-center h-[500px] text-gray-400">
-    <Ghost size={64} className="mb-4 opacity-50" />
-    <h2 className="text-2xl font-bold mb-2">社交中心</h2>
-    <p>正在开发中... 这里将显示好友列表和公会聊天。</p>
-  </div>
-);
-
-const StorePage = () => {
-  // Mock Data
-  const shopItems: ShopItem[] = [
-    {
-      id: '1',
-      title: "奥之灰烬",
-      desc: "解锁这只传奇的飞行坐骑，在天空中留下火焰的轨迹。",
-      price: 50,
-      originalPrice: 100,
-      currency: 'gem',
-      image: "https://wow.zamimg.com/uploads/screenshots/normal/68427-ashes-of-alar.jpg",
-      tags: ['坐骑', '全服通用'],
-      discount: 50,
-      featured: true
-    },
-    {
-      id: '2',
-      title: "阵营转换服务",
-      desc: "改变你的角色阵营（联盟/部落）。包含一次免费的种族变更。",
-      price: 1000,
-      originalPrice: 1176,
-      currency: 'vote',
-      image: "https://bnetcmsus-a.akamaihd.net/cms/blog_header/2g/2G40356549211624992563.jpg",
-      tags: ['角色服务', '全服通用'],
-      discount: 15,
-      featured: true
-    },
-    {
-      id: '3',
-      title: "10,000 金币",
-      desc: "立即获得 10,000 金币。仅限选定的服务器和角色。",
-      price: 250,
-      currency: 'gem',
-      image: "https://wow.zamimg.com/uploads/screenshots/normal/872410-pile-of-gold.jpg",
-      tags: ['货币', '单角色'],
-    },
-    {
-      id: '4',
-      title: "直升 80 级",
-      desc: "将你的角色等级立即提升至 80 级。赠送全套 200 装等装备。",
-      price: 5000,
-      currency: 'vote',
-      image: "https://bnetcmsus-a.akamaihd.net/cms/blog_header/x8/X8J3M07954931666133285.jpg",
-      tags: ['角色服务', 'WLK 专区'],
-    },
-    {
-      id: '5',
-      title: "无敌的缰绳",
-      desc: "阿尔萨斯·米奈希尔的传奇坐骑。",
-      price: 300,
-      currency: 'gem',
-      image: "https://wow.zamimg.com/uploads/screenshots/normal/169992-invincibles-reins.jpg",
-      tags: ['坐骑', '稀有'],
-    },
-    {
-      id: '6',
-      title: "幻化：大元帅",
-      desc: "解锁大元帅/高阶督军的经典PVP外观幻化权限。",
-      price: 1500,
-      currency: 'vote',
-      image: "https://wow.zamimg.com/uploads/screenshots/normal/75945-grand-marshals-claymore.jpg",
-      tags: ['幻化', '账号共享'],
-    }
-  ];
-
-  return (
-    <div className="flex flex-col min-h-full animate-in fade-in duration-500">
-      {/* Store Header */}
-      <div className="flex justify-between items-end mb-8">
-        <div>
-           <h2 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-             <ShoppingBag size={32} className="text-amber-500" />
-             游戏商城
-           </h2>
-           <p className="text-gray-400 text-sm">选购坐骑、宠物、服务以及更多精彩内容</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-           <button className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-bold rounded shadow-lg shadow-amber-900/40 active:scale-95 transition-all flex items-center gap-2">
-              <Gem size={18} />
-              充值水晶
-           </button>
-           <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-gray-300 hover:text-white transition-colors flex items-center gap-2">
-              <History size={18} />
-              购买记录
-           </button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-[#150a20] p-4 rounded-xl border border-white/5 mb-6 flex flex-wrap gap-6 items-center">
-         <ShopFilter label="服务器" options={['所有服务器', '冰冠冰川', '洛丹伦', '黑石山']} />
-         <ShopFilter label="分类" options={['所有商品', '坐骑 & 宠物', '角色服务', '道具 & 货币', '幻化外观']} />
-         
-         <div className="w-px h-6 bg-white/10 mx-2"></div>
-         
-         <label className="flex items-center gap-2 cursor-pointer group">
-            <div className="w-4 h-4 rounded border border-white/20 bg-black/40 flex items-center justify-center group-hover:border-amber-500 transition-colors">
-               <Check size={10} className="text-amber-500" />
-            </div>
-            <span className="text-sm text-gray-400 group-hover:text-gray-200">仅显示优惠</span>
-         </label>
-
-         <div className="ml-auto relative">
-            <input 
-              type="text" 
-              placeholder="搜索商品..." 
-              className="bg-black/40 border border-white/10 rounded-full pl-10 pr-4 py-1.5 text-sm text-gray-200 outline-none focus:border-amber-500/50 transition-colors w-64"
-            />
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-         </div>
-      </div>
-
-      {/* Shop Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
-         {shopItems.map(item => (
-           <ShopCard key={item.id} item={item} />
-         ))}
-      </div>
-    </div>
-  );
-};
-
-const NewsPage = () => (
-  <div className="flex flex-col items-center justify-center h-[500px] text-gray-400">
-    <Shield size={64} className="mb-4 opacity-50" />
-    <h2 className="text-2xl font-bold mb-2">新闻资讯</h2>
-    <p>正在开发中... 这里将显示所有历史公告和更新日志。</p>
-  </div>
-);
-
-const DevPage = () => (
-  <div className="flex flex-col items-center justify-center h-[500px] text-gray-400">
-    <Settings size={64} className="mb-4 opacity-50" />
-    <h2 className="text-2xl font-bold mb-2">开发计划</h2>
-    <p>正在开发中... 查看服务器未来的更新路线图。</p>
-  </div>
-);
 
 export default App;

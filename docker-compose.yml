@@ -38,6 +38,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./patch:/usr/share/nginx/html/patch
     depends_on:
       - client
       - server

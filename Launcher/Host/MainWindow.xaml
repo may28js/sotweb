@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:StoryOfTimeLauncher"
         mc:Ignorable="d"
         Title="Story of Time Launcher" Height="720" Width="1280"
-    WindowStyle="None" ResizeMode="CanMinimize" AllowsTransparency="False" Background="#0f0518"
+    WindowStyle="None" ResizeMode="CanMinimize" AllowsTransparency="False" Background="#1a1a1a"
     WindowStartupLocation="CenterScreen">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0" ResizeBorderThickness="5" GlassFrameThickness="0" CornerRadius="0" />

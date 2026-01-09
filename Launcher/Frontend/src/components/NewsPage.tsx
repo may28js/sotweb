@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Shield } from 'lucide-react';
+import { Newspaper } from 'lucide-react';
 import { newsService } from '../services/api';
 import type { NewsItem } from '../types';
 
@@ -50,7 +50,7 @@ const NewsPage = () => {
     return (
         <div className="flex flex-col h-full animate-in fade-in duration-500">
              <div className="flex items-center gap-3 mb-8">
-                <Shield size={32} className="text-amber-500" />
+                <Newspaper size={32} className="text-amber-500" />
                 <h2 className="text-2xl font-bold text-white">新闻资讯</h2>
              </div>
 

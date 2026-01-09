@@ -1,0 +1,50 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.vs/
+*.user
+*.suo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Node
+node_modules/
+dist/
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# Dotnet
+bin/
+obj/
+*.pdb
+*.dll
+*.exe
+*.so
+*.dylib
+
+# Exceptions (if we need to track specific binaries, usually not)
+!Host/sot.ico
+
+# Build Output
+Host/wwwroot/
+Installer/
+PublishOutput/
+
+# Backups and Temps
+Frontend_Backup/
+sotweb-main/
+图片/
+*.zip
+*.7z
+*.rar
+*.log
+*.tmp
+
+# User specific
+*.local

@@ -1,4 +1,4 @@
 {
-  "apiBaseUrl": "http://localhost:5200/api",
+  "apiBaseUrl": "https://shiguanggushi.xyz/api",
   "enableMockData": false
 }

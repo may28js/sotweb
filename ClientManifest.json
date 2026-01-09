@@ -1,0 +1,1073 @@
+{
+  "Version": "1.0.0",
+  "LastUpdated": "2026-01-06T19:05:31.0131244+08:00",
+  "BaseUrl": "https://shiguanggushi.xyz/patch/",
+  "ClientDownloadUrl": "",
+  "Launcher": null,
+  "Components": [
+    {
+      "RelativePath": "Battle.net.dll",
+      "MD5": "a6147be69fe9c30de9c3b3e5dbfcf1e7",
+      "Size": 15588224,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "dbghelp.dll",
+      "MD5": "72ce8558590472777b8b5da70919e631",
+      "Size": 1039728,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "DivxDecoder.dll",
+      "MD5": "57e72cae12091dafa29a8e4db8b4f1d1",
+      "Size": 413696,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "ijl15.dll",
+      "MD5": "1aa06c81a0621e277e755b965b5e4b5f",
+      "Size": 372736,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "msvcr80.dll",
+      "MD5": "1169436ee42f860c7db37a4692b38f0e",
+      "Size": 632656,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Repair.exe",
+      "MD5": "a7c8d895051806b02991ad1698b855bf",
+      "Size": 950928,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Scan.dll",
+      "MD5": "beaa5d244a8551117cfb37f843800ef6",
+      "Size": 49924,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "unicows.dll",
+      "MD5": "e1102cedf0c818984c2aca2a666d4c5f",
+      "Size": 245408,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Wow.exe",
+      "MD5": "73b4bd122ec862171d340d2da9f9d4a5",
+      "Size": 7704216,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "WowError.exe",
+      "MD5": "ccf73ceffc6b16793b5e84e620058212",
+      "Size": 350360,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/alternate.MPQ",
+      "MD5": "3d3abf2999bde794c6b7e0be5f2a91f9",
+      "Size": 97256727,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/common-2.MPQ",
+      "MD5": "f97e3089fe45d7c77bd4373378812450",
+      "Size": 1835428448,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/common.MPQ",
+      "MD5": "f179e16406a8c28e9845762f79872fbb",
+      "Size": 3014298814,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/expansion.MPQ",
+      "MD5": "1dacf2f910a4e0a8dcab26b9ffd93c41",
+      "Size": 1908644445,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/lichking.MPQ",
+      "MD5": "555ad2ac78a4f93f19458bf3246d846e",
+      "Size": 2551828006,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/patch-2.MPQ",
+      "MD5": "17d5fee05f9b3ffc33a988426bc30fae",
+      "Size": 1536602393,
+      "Type": 1,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/patch-3.MPQ",
+      "MD5": "bb6af88915a8cfaedf5904d315935bd5",
+      "Size": 282,
+      "Type": 1,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/patch-7.MPQ",
+      "MD5": "a7b69a006eb29496112b073e0c81ff4b",
+      "Size": 378115554,
+      "Type": 1,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/patch.MPQ",
+      "MD5": "7fc3f31e4857db5661d66a252ff62e99",
+      "Size": 3550788030,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/AccountBilling.url",
+      "MD5": "a7655c19cca3e18fcb4c51e07e6d554c",
+      "Size": 205,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/backup-zhCN.MPQ",
+      "MD5": "a6376f81c5fc30ed623fe657c2c44270",
+      "Size": 145648687,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/base-zhCN.MPQ",
+      "MD5": "c98b5e25449f918c46ce506898bc6d3b",
+      "Size": 24517885,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/connection-help.html",
+      "MD5": "ceaecdeab11d5945f3120d91d6fa64ff",
+      "Size": 6636,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Credits.html",
+      "MD5": "fbce26990b6fd86c5fbe4b82798919c7",
+      "Size": 22237,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Credits_BC.html",
+      "MD5": "b8f98634c12cba15ec198d82336bfcd9",
+      "Size": 32213,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Credits_LK.html",
+      "MD5": "7f52afe1b69173c3d633d13bd4b7ab85",
+      "Size": 74223,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/eula.html",
+      "MD5": "47269e223fff59047ebc0f9599d98c4d",
+      "Size": 19696,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/expansion-locale-zhCN.MPQ",
+      "MD5": "85a143a6464be422e048f8dfda88dd22",
+      "Size": 3073768,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/expansion-speech-zhCN.MPQ",
+      "MD5": "0d94b98ba6f1c6275dbcd70996d32972",
+      "Size": 252982471,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/lichking-locale-zhCN.MPQ",
+      "MD5": "d58757c065d603e46358d990b79e490a",
+      "Size": 11993723,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/lichking-speech-zhCN.MPQ",
+      "MD5": "d0f7fe6e5829a169a61753b9d56984f4",
+      "Size": 274739660,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/locale-zhCN.MPQ",
+      "MD5": "a75dbed73b4090dc5b555990b8606d27",
+      "Size": 232243482,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/patch-zhCN-2.MPQ",
+      "MD5": "9ca89593f14b1f549062067c455a8bf9",
+      "Size": 419919560,
+      "Type": 1,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/patch-zhCN-3.MPQ",
+      "MD5": "7b0381bc539bac3da322663e4ec68bcf",
+      "Size": 32509,
+      "Type": 1,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/patch-zhCN-7.MPQ",
+      "MD5": "a854a1a5f123c4567a3cc38cfba0628c",
+      "Size": 130812504,
+      "Type": 1,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/patch-zhCN.MPQ",
+      "MD5": "a641302d92c8f069388884d1a22f197e",
+      "Size": 335989395,
+      "Type": 1,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/realmlist.wtf",
+      "MD5": "e740fc23bf2cd19acb0e63ad342d7d90",
+      "Size": 26,
+      "Type": 2,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/speech-zhCN.MPQ",
+      "MD5": "bc805c073c9e33f46675e1012f16815a",
+      "Size": 494915865,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/TechSupport.url",
+      "MD5": "a9426b72d1635382c6e6d34d3d3e7ca1",
+      "Size": 222,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/tos.html",
+      "MD5": "927cc57c68cff87e217f9e690dbfa772",
+      "Size": 30248,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Manual.html",
+      "MD5": "af0c2e053707941e8046697c65aa1ef1",
+      "Size": 147,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe.html",
+      "MD5": "9cf529eb265f4b04ffc0f574a9414dc9",
+      "Size": 1660,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-botleft.jpg",
+      "MD5": "88fa9ef2a3f5c3afcb6514ec350fa500",
+      "Size": 1864,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-botright.jpg",
+      "MD5": "2855472c63c207258965d48626c1b6a5",
+      "Size": 1691,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-bottom.jpg",
+      "MD5": "cbde9fcb111f4749709bf420a4db5c82",
+      "Size": 2939,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-left.jpg",
+      "MD5": "6db96970231e840541ff83e52900fcb5",
+      "Size": 2478,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-merge.jpg",
+      "MD5": "8e8795064c12cbed1b9346570638946d",
+      "Size": 375,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-mergebot.jpg",
+      "MD5": "f8d86992052c8866bfd5d309bfce2f60",
+      "Size": 592,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-middle.jpg",
+      "MD5": "b5bf49c1f073e592ec636761602fe238",
+      "Size": 1235,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-right.jpg",
+      "MD5": "cd0b05de435c6bf685581e3d6060a01e",
+      "Size": 2262,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-top.jpg",
+      "MD5": "a2e72071398e22f4c8e817308066d838",
+      "Size": 7773,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/Blizz.jpg",
+      "MD5": "c489e82a9749eb80fe623410ba48dcb3",
+      "Size": 25635,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/BLWidget.jpg",
+      "MD5": "df8a0a2ebe1bae6ed292696e9e3f85b9",
+      "Size": 9497,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/BRWidget.jpg",
+      "MD5": "3ce62a44b28f879d80410219cc451f64",
+      "Size": 9454,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/BWidget.jpg",
+      "MD5": "0e77aa64029af11d503add88c9b6f1fb",
+      "Size": 10358,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/CRepeat.jpg",
+      "MD5": "8e730b47b708d500142c955c6a342ed1",
+      "Size": 18653,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/dragon-left.jpg",
+      "MD5": "a8cd5cd7f1a05fa89ef1ad66e6c7aa96",
+      "Size": 2718,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/dragon-right.jpg",
+      "MD5": "834894862daa2c8b3a976350eb56055a",
+      "Size": 2037,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/gryphon-right.jpg",
+      "MD5": "29f0d05380cf5d7cc19b6395f8ecb17f",
+      "Size": 930,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/help-request.gif",
+      "MD5": "1c49be42d4bff0a122ce4cb1537cf877",
+      "Size": 543,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/ItemMarker.jpg",
+      "MD5": "0d5832e88375abd18e1b9d01bdb64000",
+      "Size": 19551,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/logo-blizzard.gif",
+      "MD5": "08d46e1c0dee49b43bf23118ce09aec2",
+      "Size": 10253,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/logo-bnet.gif",
+      "MD5": "79971460890ad43ca39fc3ad0260d9bc",
+      "Size": 10357,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/logo-wow.gif",
+      "MD5": "9bba13f2f7b8aba396d632d28a2265c2",
+      "Size": 21536,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/LRepeat.jpg",
+      "MD5": "71e2154610445c84023ee5b1afac4175",
+      "Size": 13245,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/MacLogo.jpg",
+      "MD5": "b76842e74f79ff25130805c36acef70e",
+      "Size": 15588,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/PCLogo.jpg",
+      "MD5": "ef94317c97b138ecea2484a3285c83ab",
+      "Size": 1385,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/pixel.gif",
+      "MD5": "325472601571f31e1bf00674c368d335",
+      "Size": 43,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/RRepeat.jpg",
+      "MD5": "929a96b2c9908775ef80103b06ac93de",
+      "Size": 13460,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/splash.jpg",
+      "MD5": "12bde83a0937ae8c9d03f4990a2525e3",
+      "Size": 53481,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/title-troubleshooting.jpg",
+      "MD5": "b314e83db91fd942989a238afcc21c3e",
+      "Size": 10788,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/TLWidget.jpg",
+      "MD5": "a60268c3c008a4c75370a4ba20ba6745",
+      "Size": 9481,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/TRWidget.jpg",
+      "MD5": "cc2dc6c673134b5abd30709bb2e5b412",
+      "Size": 9440,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/TWidget.jpg",
+      "MD5": "d085d2a56eecc0409ff7ec7c5dc12c24",
+      "Size": 10340,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/contactinfo-over.gif",
+      "MD5": "571e33d5e733e785ac4a720bdee10d7f",
+      "Size": 2335,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/contactinfo.gif",
+      "MD5": "ee45a21550c534cadc3e61c7b52e8f8d",
+      "Size": 2125,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/mac-over.jpg",
+      "MD5": "22732e32273fc6f82363bd1bcfda8e61",
+      "Size": 1971,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/mac.jpg",
+      "MD5": "73a69959b02c35f87edc512e040aa8a0",
+      "Size": 1893,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/pc-over.jpg",
+      "MD5": "a93dcffb37ee6a15ca104b1aab1e23fd",
+      "Size": 1901,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/pc.jpg",
+      "MD5": "e26f2addf31d13ac470ed3d511f3954c",
+      "Size": 1809,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/readme-over.gif",
+      "MD5": "2a4d4bdbaa0b8b158c223bb143b36266",
+      "Size": 2362,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/readme.gif",
+      "MD5": "60ee7612234588dae72beca2b63d806f",
+      "Size": 2174,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/troubleshooting-over.gif",
+      "MD5": "01b2a986f52b974087dcf569b7fb4e87",
+      "Size": 2412,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/troubleshooting.gif",
+      "MD5": "4d53b489a27d69d6c5bfa4c6e16cb0fd",
+      "Size": 2240,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/website-over.gif",
+      "MD5": "cf97915b50ce16ffd065166fc0a7335f",
+      "Size": 2320,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/website.gif",
+      "MD5": "4ec46533ffa4bb36812fbb04a87502b3",
+      "Size": 2140,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/contactinfo-mac.jpg",
+      "MD5": "88d2701cac06d8f823cd9a709d42bd82",
+      "Size": 6749,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/contactinfo-pc.jpg",
+      "MD5": "5183573f62f8a3a2d24ab074ed93cfc3",
+      "Size": 7221,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/readme-mac.jpg",
+      "MD5": "130b7adaaf356fa9e1ebd0a2d0c9fc09",
+      "Size": 6528,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/readme-pc.jpg",
+      "MD5": "a4c96174eeed62d3a13148b3363a9f84",
+      "Size": 7009,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/troubleshooting-mac.jpg",
+      "MD5": "33b5c9c5e09986141c3248e8df23be1a",
+      "Size": 7243,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/troubleshooting-pc.jpg",
+      "MD5": "88448436252520ef073536de3b3c81ae",
+      "Size": 7701,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/BSpacer.html",
+      "MD5": "04ddca4aa6739aa89314c801eaa600fb",
+      "Size": 736,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/CSpacer.html",
+      "MD5": "8db8d9d41b39f1dabddda3d4fc9f8372",
+      "Size": 311,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Detector.js",
+      "MD5": "a68d3070ef1dc998abf004fa5d23b1dd",
+      "Size": 380,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Greeting.html",
+      "MD5": "6cb186191e53dc0c303e669afe6584c0",
+      "Size": 80246,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Index.html",
+      "MD5": "e9435c40a23e21ec8717308a95f7a038",
+      "Size": 1642,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/LBorder.html",
+      "MD5": "09d984ebdae85ccd938490b11fbbe408",
+      "Size": 340,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Nav.html",
+      "MD5": "2d122754952717b2c7f9d2c6de09aace",
+      "Size": 1947,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/RBorder.html",
+      "MD5": "e8c02cdf64e4aa86376e7c78e7e039e4",
+      "Size": 351,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Requirements.html",
+      "MD5": "05e62726f393132170ef189fc1787c44",
+      "Size": 1383,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Splash.html",
+      "MD5": "9d0aa3f1ce329b60365df116ef54318d",
+      "Size": 810,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Styles.css",
+      "MD5": "a3f178c0e16b4ff49b0158fded9b8a67",
+      "Size": 5956,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/StylesLeft.css",
+      "MD5": "f60107dde1e58ff8183f554f8fcfc99b",
+      "Size": 5697,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/TBorder.html",
+      "MD5": "ca0d8c213e8ae86c15abf85ff328b14a",
+      "Size": 2756,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/TheScript.js",
+      "MD5": "4e99046e2124214045bef16434ec9614",
+      "Size": 7462,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)Foreword.html",
+      "MD5": "c48b49f1e7bc67624fcfa828ce68ddc9",
+      "Size": 1142,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)Installation.html",
+      "MD5": "ee3421dfadb768d05e96c80d777e2d5c",
+      "Size": 1149,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)Patching.html",
+      "MD5": "798c75405fbd961bc08b6cc2b386efe1",
+      "Size": 1177,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)ReadMeMenu.html",
+      "MD5": "0fd3a8f65a61523b18c309c6e7132944",
+      "Size": 2014,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)SystemRequirements.html",
+      "MD5": "edc7a5f6ba0516018fba95087f824101",
+      "Size": 1859,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)Uninstall.html",
+      "MD5": "9c17e1914b96dae62f7266d3c2474b14",
+      "Size": 1655,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)Foreword.html",
+      "MD5": "ab004719bf2904df9f2942f4195d9fd9",
+      "Size": 72704,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)Installation.html",
+      "MD5": "95aeee71004d76174a497f522b26aa6e",
+      "Size": 1502,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)Patching.html",
+      "MD5": "d43a1fe3caac6d8331413c199eabb8a5",
+      "Size": 89874,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)ReadMeMenu.html",
+      "MD5": "b155d9c1414b17a3426077aac60102c2",
+      "Size": 2011,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)SystemRequirements.html",
+      "MD5": "9966e841c3c046b4cf646317f8e81f00",
+      "Size": 2149,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)Uninstall.html",
+      "MD5": "90ccbc71ce77bd240de7745f07a4a8bd",
+      "Size": 112222,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/BasicCommands.html",
+      "MD5": "092a8218feaf91587e2f9cfceaa380fd",
+      "Size": 225024,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/CharacterNaming.html",
+      "MD5": "921e1c2f017ea943aad1d8e9c01f1e4f",
+      "Size": 1381,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/EULA.html",
+      "MD5": "47269e223fff59047ebc0f9599d98c4d",
+      "Size": 19696,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/GettingStarted.html",
+      "MD5": "d68ccb4ed19678f13c63feab94e1af04",
+      "Size": 99114,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/ManualErrata.html",
+      "MD5": "fd4490ee2783b9d4c670305166b99934",
+      "Size": 1114,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/RealmSelection.html",
+      "MD5": "7460b8723a3afbf823747dba8c41bd06",
+      "Size": 2460,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/(Mac)SupportMenu.html",
+      "MD5": "73131c698e7a093e1ddb450ae00c71b5",
+      "Size": 2665,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/(Mac)TechnicalSupport.html",
+      "MD5": "56a21d616da828f83e1f8cc26aac8e86",
+      "Size": 2214,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/(PC)SupportMenu.html",
+      "MD5": "855bde62790582f4b05d71d1302e36c2",
+      "Size": 2664,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/(PC)TechnicalSupport.html",
+      "MD5": "7cc72468019e7d3871325b6e135bc144",
+      "Size": 3565,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/AccountAdministration.html",
+      "MD5": "43d4d60b40ca61b52cf7e0cce0df00f8",
+      "Size": 2149,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/BlizzardInsider.html",
+      "MD5": "b49d716aa8a0b81e051833b08e842e91",
+      "Size": 2716,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/Employment.html",
+      "MD5": "5a75518b159d6f9c84520caa2e341702",
+      "Size": 2626,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/GameSuggestions.html",
+      "MD5": "267bb32c6ae30bf8b3ac329603d44b81",
+      "Size": 895,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/GameSupport.html",
+      "MD5": "dbdc96282da1e81b3f09f4aae2bcff8c",
+      "Size": 2645,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/Password.html",
+      "MD5": "452ff45c0922eeb7d9ea21af7a5f66d1",
+      "Size": 2288,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)AudioProblems.html",
+      "MD5": "e2a4a53da13c770407f9c311a6f44f17",
+      "Size": 1291,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)BlizzardDownloaderProblems.html",
+      "MD5": "db8f6eed3de9c0fe120cfa791bd8b5de",
+      "Size": 2676,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)ConnectionLoginProblems.html",
+      "MD5": "4865560380087956f8055f9aeffbb76a",
+      "Size": 4370,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)GameplayProblems.html",
+      "MD5": "a9bfc8263ea66a0accad025c4f094502",
+      "Size": 2118,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)Install.html",
+      "MD5": "7628ca89792f5b0d670494c4db16429f",
+      "Size": 910,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)PreventiveMaintenance.html",
+      "MD5": "a30a7eba51803112925e6449dcd7604c",
+      "Size": 3918,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)StartupProblems.html",
+      "MD5": "da859c24615b77abfb4993cdc136e931",
+      "Size": 3643,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)TroubleshootingMenu.html",
+      "MD5": "fbbd294a43541a51e27d653f5e7daad2",
+      "Size": 2063,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)VideoProblems.html",
+      "MD5": "c401d5be18479721038751f6ab9c39c9",
+      "Size": 6378,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)AudioProblems.html",
+      "MD5": "0c275e2896b1c26602dd82a0f11309d3",
+      "Size": 4117,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)BlizzardDownloaderProblems.html",
+      "MD5": "bdfb283a7e1f654127ad1dc89461992e",
+      "Size": 3848,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)ConnectionLoginProblems.html",
+      "MD5": "04607e99bcb29124d19d9d022a29796f",
+      "Size": 4443,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)GameplayProblems.html",
+      "MD5": "efc44fcc17a8686d27d313574a4118ed",
+      "Size": 2144,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)Install.html",
+      "MD5": "cf36dbeb566b7aef114d1c501bd5c157",
+      "Size": 1934,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)PreventiveMaintenance.html",
+      "MD5": "a95460c91a7820db174ad454a49fc672",
+      "Size": 6863,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)StartupProblems.html",
+      "MD5": "1cf2831d646eb197fa3fc11cc93494b5",
+      "Size": 3921,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)TroubleshootingMenu.html",
+      "MD5": "52402c5c0d252b20dea662033675b63d",
+      "Size": 2027,
+      "Type": 0,
+      "DownloadUrl": ""
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)VideoProblems.html",
+      "MD5": "29cae2d477099972d542a25f9bab378f",
+      "Size": 6912,
+      "Type": 0,
+      "DownloadUrl": ""
+    }
+  ]
+}

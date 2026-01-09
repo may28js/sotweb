@@ -1,0 +1,653 @@
+{
+  "Files": [
+    {
+      "RelativePath": "Battle.net.dll",
+      "Size": 15588224
+    },
+    {
+      "RelativePath": "ClientManifest.json",
+      "Size": 30519
+    },
+    {
+      "RelativePath": "dbghelp.dll",
+      "Size": 1039728
+    },
+    {
+      "RelativePath": "DivxDecoder.dll",
+      "Size": 413696
+    },
+    {
+      "RelativePath": "ijl15.dll",
+      "Size": 372736
+    },
+    {
+      "RelativePath": "Launcher.exe",
+      "Size": 3859712
+    },
+    {
+      "RelativePath": "msvcr80.dll",
+      "Size": 632656
+    },
+    {
+      "RelativePath": "Repair.exe",
+      "Size": 950928
+    },
+    {
+      "RelativePath": "Scan.dll",
+      "Size": 49924
+    },
+    {
+      "RelativePath": "unicows.dll",
+      "Size": 245408
+    },
+    {
+      "RelativePath": "Wow.exe",
+      "Size": 7704216
+    },
+    {
+      "RelativePath": "WowError.exe",
+      "Size": 350360
+    },
+    {
+      "RelativePath": "Data/alternate.MPQ",
+      "Size": 97256727
+    },
+    {
+      "RelativePath": "Data/common-2.MPQ",
+      "Size": 1835428448
+    },
+    {
+      "RelativePath": "Data/common.MPQ",
+      "Size": 3014298814
+    },
+    {
+      "RelativePath": "Data/expansion.MPQ",
+      "Size": 1908644445
+    },
+    {
+      "RelativePath": "Data/lichking.MPQ",
+      "Size": 2551828006
+    },
+    {
+      "RelativePath": "Data/patch-2.MPQ",
+      "Size": 1536602393
+    },
+    {
+      "RelativePath": "Data/patch-3.MPQ",
+      "Size": 282
+    },
+    {
+      "RelativePath": "Data/patch-7.MPQ",
+      "Size": 378115554
+    },
+    {
+      "RelativePath": "Data/patch.MPQ",
+      "Size": 3550788030
+    },
+    {
+      "RelativePath": "Data/zhCN/AccountBilling.url",
+      "Size": 205
+    },
+    {
+      "RelativePath": "Data/zhCN/backup-zhCN.MPQ",
+      "Size": 145648687
+    },
+    {
+      "RelativePath": "Data/zhCN/base-zhCN.MPQ",
+      "Size": 24517885
+    },
+    {
+      "RelativePath": "Data/zhCN/connection-help.html",
+      "Size": 6636
+    },
+    {
+      "RelativePath": "Data/zhCN/Credits.html",
+      "Size": 22237
+    },
+    {
+      "RelativePath": "Data/zhCN/Credits_BC.html",
+      "Size": 32213
+    },
+    {
+      "RelativePath": "Data/zhCN/Credits_LK.html",
+      "Size": 74223
+    },
+    {
+      "RelativePath": "Data/zhCN/eula.html",
+      "Size": 19696
+    },
+    {
+      "RelativePath": "Data/zhCN/expansion-locale-zhCN.MPQ",
+      "Size": 3073768
+    },
+    {
+      "RelativePath": "Data/zhCN/expansion-speech-zhCN.MPQ",
+      "Size": 252982471
+    },
+    {
+      "RelativePath": "Data/zhCN/lichking-locale-zhCN.MPQ",
+      "Size": 11993723
+    },
+    {
+      "RelativePath": "Data/zhCN/lichking-speech-zhCN.MPQ",
+      "Size": 274739660
+    },
+    {
+      "RelativePath": "Data/zhCN/locale-zhCN.MPQ",
+      "Size": 232243482
+    },
+    {
+      "RelativePath": "Data/zhCN/patch-zhCN-2.MPQ",
+      "Size": 419919560
+    },
+    {
+      "RelativePath": "Data/zhCN/patch-zhCN-3.MPQ",
+      "Size": 32509
+    },
+    {
+      "RelativePath": "Data/zhCN/patch-zhCN-7.MPQ",
+      "Size": 130812504
+    },
+
+    {
+      "RelativePath": "Data/zhCN/patch-zhCN.MPQ",
+      "Size": 335989395
+    },
+    {
+      "RelativePath": "Data/zhCN/realmlist.wtf",
+      "Size": 26
+    },
+    {
+      "RelativePath": "Data/zhCN/speech-zhCN.MPQ",
+      "Size": 494915865
+    },
+    {
+      "RelativePath": "Data/zhCN/TechSupport.url",
+      "Size": 222
+    },
+    {
+      "RelativePath": "Data/zhCN/tos.html",
+      "Size": 30248
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Manual.html",
+      "Size": 147
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe.html",
+      "Size": 1660
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-botleft.jpg",
+      "Size": 1864
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-botright.jpg",
+      "Size": 1691
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-bottom.jpg",
+      "Size": 2939
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-left.jpg",
+      "Size": 2478
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-merge.jpg",
+      "Size": 375
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-mergebot.jpg",
+      "Size": 592
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-middle.jpg",
+      "Size": 1235
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-right.jpg",
+      "Size": 2262
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/bg-top.jpg",
+      "Size": 7773
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/Blizz.jpg",
+      "Size": 25635
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/BLWidget.jpg",
+      "Size": 9497
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/BRWidget.jpg",
+      "Size": 9454
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/BWidget.jpg",
+      "Size": 10358
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/CRepeat.jpg",
+      "Size": 18653
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/dragon-left.jpg",
+      "Size": 2718
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/dragon-right.jpg",
+      "Size": 2037
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/gryphon-right.jpg",
+      "Size": 930
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/help-request.gif",
+      "Size": 543
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/ItemMarker.jpg",
+      "Size": 19551
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/logo-blizzard.gif",
+      "Size": 10253
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/logo-bnet.gif",
+      "Size": 10357
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/logo-wow.gif",
+      "Size": 21536
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/LRepeat.jpg",
+      "Size": 13245
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/MacLogo.jpg",
+      "Size": 15588
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/PCLogo.jpg",
+      "Size": 1385
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/pixel.gif",
+      "Size": 43
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/RRepeat.jpg",
+      "Size": 13460
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/splash.jpg",
+      "Size": 53481
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/title-troubleshooting.jpg",
+      "Size": 10788
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/TLWidget.jpg",
+      "Size": 9481
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/TRWidget.jpg",
+      "Size": 9440
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/TWidget.jpg",
+      "Size": 10340
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/BSpacer.html",
+      "Size": 736
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/CSpacer.html",
+      "Size": 311
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Detector.js",
+      "Size": 380
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Greeting.html",
+      "Size": 80246
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Index.html",
+      "Size": 1642
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/LBorder.html",
+      "Size": 340
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Nav.html",
+      "Size": 1947
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/RBorder.html",
+      "Size": 351
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Requirements.html",
+      "Size": 1383
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Splash.html",
+      "Size": 810
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/Styles.css",
+      "Size": 5956
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/StylesLeft.css",
+      "Size": 5697
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/TBorder.html",
+      "Size": 2756
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Layout/TheScript.js",
+      "Size": 7462
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)Foreword.html",
+      "Size": 1142
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)Installation.html",
+      "Size": 1149
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)Patching.html",
+      "Size": 1177
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)ReadMeMenu.html",
+      "Size": 2014
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)SystemRequirements.html",
+      "Size": 1859
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(Mac)Uninstall.html",
+      "Size": 1655
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)Foreword.html",
+      "Size": 72704
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)Installation.html",
+      "Size": 1502
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)Patching.html",
+      "Size": 89874
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)ReadMeMenu.html",
+      "Size": 2011
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)SystemRequirements.html",
+      "Size": 2149
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/(PC)Uninstall.html",
+      "Size": 112222
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/BasicCommands.html",
+      "Size": 225024
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/CharacterNaming.html",
+      "Size": 1381
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/EULA.html",
+      "Size": 19696
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/GettingStarted.html",
+      "Size": 99114
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/ManualErrata.html",
+      "Size": 1114
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/ReadMe/RealmSelection.html",
+      "Size": 2460
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/(Mac)SupportMenu.html",
+      "Size": 2665
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/(Mac)TechnicalSupport.html",
+      "Size": 2214
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/(PC)SupportMenu.html",
+      "Size": 2664
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/(PC)TechnicalSupport.html",
+      "Size": 3565
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/AccountAdministration.html",
+      "Size": 2149
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/BlizzardInsider.html",
+      "Size": 2716
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/Employment.html",
+      "Size": 2626
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/GameSuggestions.html",
+      "Size": 895
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/GameSupport.html",
+      "Size": 2645
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Support/Password.html",
+      "Size": 2288
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)AudioProblems.html",
+      "Size": 1291
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)BlizzardDownloaderProblems.html",
+      "Size": 2676
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)ConnectionLoginProblems.html",
+      "Size": 4370
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)GameplayProblems.html",
+      "Size": 2118
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)Install.html",
+      "Size": 910
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)PreventiveMaintenance.html",
+      "Size": 3918
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)StartupProblems.html",
+      "Size": 3643
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)TroubleshootingMenu.html",
+      "Size": 2063
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(Mac)VideoProblems.html",
+      "Size": 6378
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)AudioProblems.html",
+      "Size": 4117
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)BlizzardDownloaderProblems.html",
+      "Size": 3848
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)ConnectionLoginProblems.html",
+      "Size": 4443
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)GameplayProblems.html",
+      "Size": 2144
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)Install.html",
+      "Size": 1934
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)PreventiveMaintenance.html",
+      "Size": 6863
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)StartupProblems.html",
+      "Size": 3921
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)TroubleshootingMenu.html",
+      "Size": 2027
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Troubleshooting/(PC)VideoProblems.html",
+      "Size": 6912
+    },
+    {
+      "RelativePath": "Data/zhCN/Interface/Cinematics/Logo_1024.avi",
+      "Size": 5900288
+    },
+    {
+      "RelativePath": "Data/zhCN/Interface/Cinematics/Logo_800.avi",
+      "Size": 4147200
+    },
+    {
+      "RelativePath": "Data/zhCN/Interface/Cinematics/WOW_FotLK_1024.avi",
+      "Size": 66007136
+    },
+    {
+      "RelativePath": "Data/zhCN/Interface/Cinematics/WOW_FotLK_800.avi",
+      "Size": 57244820
+    },
+    {
+      "RelativePath": "Data/zhCN/Interface/Cinematics/WOW_Intro_1024.avi",
+      "Size": 48340992
+    },
+    {
+      "RelativePath": "Data/zhCN/Interface/Cinematics/WOW_Intro_800.avi",
+      "Size": 41846784
+    },
+    {
+      "RelativePath": "Data/zhCN/Interface/Cinematics/WOW_Intro_BC_1024.avi",
+      "Size": 47600324
+    },
+    {
+      "RelativePath": "Data/zhCN/Interface/Cinematics/WOW_Intro_BC_800.avi",
+      "Size": 41249560
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/contactinfo-over.gif",
+      "Size": 2335
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/contactinfo.gif",
+      "Size": 2125
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/mac-over.jpg",
+      "Size": 1971
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/mac.jpg",
+      "Size": 1893
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/pc-over.jpg",
+      "Size": 1901
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/pc.jpg",
+      "Size": 1809
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/readme-over.gif",
+      "Size": 2362
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/readme.gif",
+      "Size": 2174
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/troubleshooting-over.gif",
+      "Size": 2412
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/troubleshooting.gif",
+      "Size": 2240
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/website-over.gif",
+      "Size": 2320
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/buttons/website.gif",
+      "Size": 2140
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/contactinfo-mac.jpg",
+      "Size": 6749
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/contactinfo-pc.jpg",
+      "Size": 7221
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/readme-mac.jpg",
+      "Size": 6528
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/readme-pc.jpg",
+      "Size": 7009
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/troubleshooting-mac.jpg",
+      "Size": 7243
+    },
+    {
+      "RelativePath": "Data/zhCN/Documentation/Images/titles/troubleshooting-pc.jpg",
+      "Size": 7701
+    }
+  ]
+}

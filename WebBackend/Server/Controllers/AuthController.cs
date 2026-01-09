@@ -243,7 +243,16 @@ namespace StoryOfTime.Server.Controllers
             {
                 string token = CreateToken(user);
                 _logger.LogInformation("Login successful for user {Username}. Token generated.", request.Username);
-                return Ok(new { token });
+                return Ok(new { 
+                    token,
+                    user = new {
+                        user.Id,
+                        user.Username,
+                        user.Email,
+                        user.Points,
+                        user.AccessLevel
+                    }
+                });
             }
             catch (Exception ex)
             {

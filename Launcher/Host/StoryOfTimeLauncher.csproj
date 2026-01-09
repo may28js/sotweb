@@ -2,15 +2,27 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <AssemblyName>SotLauncher</AssemblyName>
     <TargetFramework>net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>sot.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3650.58" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 将 wwwroot 下的所有文件作为嵌入资源 -->
+    <EmbeddedResource Include="wwwroot\**" />
+    <!-- 移除原本的 Content 复制逻辑，避免文件出现在输出目录 -->
+    <!-- <Content Include="wwwroot\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content> -->
+    <EmbeddedResource Include="base_manifest.json" />
   </ItemGroup>
 
 </Project>

@@ -1,14 +1,17 @@
 export interface ShopItem {
-  id: string;
-  title: string;
-  desc: string;
+  id: number;
+  gameItemId?: number;
+  name: string;
+  description: string;
   price: number;
   originalPrice?: number;
   currency: 'gem' | 'vote';
-  image: string;
-  tags: string[];
+  iconUrl: string;
+  category: string;
+  tags?: string[];
   discount?: number;
   featured?: boolean;
+  isUnique?: boolean;
 }
 
 export interface NewsItem {
@@ -41,4 +44,20 @@ export interface LauncherConfig {
   registerUrl: string;
   latestVersion: string;
   downloadUrl: string;
+}
+
+export interface Character {
+  name: string;
+  race: number;
+  class: number;
+  level: number;
+  gender: number;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  points: number;
+  accessLevel: number;
 }

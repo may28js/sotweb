@@ -24,9 +24,8 @@ namespace StoryOfTime.Server.Controllers
         {
             var settings = await _context.GameServerSettings.FirstOrDefaultAsync();
             
-            // Use Host from DB settings if available, otherwise use default/fallback
-            // Ideally this should be the public IP/Domain of the game server
-            string realmlist = !string.IsNullOrEmpty(settings?.Host) ? settings.Host : "38.55.125.89"; 
+            // Force use IP for realmlist connectivity, ignore DB hostname for now
+            string realmlist = "38.55.125.89"; 
             
             return new LauncherConfigDto
             {
@@ -34,7 +33,7 @@ namespace StoryOfTime.Server.Controllers
                 WebsiteUrl = "https://shiguanggushi.xyz",
                 RegisterUrl = "https://shiguanggushi.xyz/register",
                 LatestVersion = "1.0.0", 
-                DownloadUrl = "https://shiguanggushi.xyz/download/launcher.zip" 
+                DownloadUrl = "https://shiguanggushi.xyz/launcher.zip" 
             };
         }
 
