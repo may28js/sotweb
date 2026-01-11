@@ -35,7 +35,8 @@ namespace StoryOfTime.Server.Controllers
                 Email = u.Email,
                 AccessLevel = u.AccessLevel,
                 Points = u.Points,
-                CreatedAt = u.CreatedAt
+                CreatedAt = u.CreatedAt,
+                AvatarUrl = u.AvatarUrl
                 // PasswordHash is NOT returned
             }).ToListAsync();
         }
@@ -93,5 +94,26 @@ namespace StoryOfTime.Server.Controllers
 
             return Ok(new { message = $"User {user.Username} points updated. New Balance: {user.Points}" });
         }
+
+        // PUT: api/Users/avatar
+        [HttpPut("avatar")]
+        public async Task<IActionResult> UpdateAvatar([FromBody] UpdateAvatarDto request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("nameid");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId)) return Unauthorized();
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            user.AvatarUrl = request.AvatarUrl;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Avatar updated successfully", avatarUrl = user.AvatarUrl });
+        }
+    }
+
+    public class UpdateAvatarDto
+    {
+        public string AvatarUrl { get; set; } = string.Empty;
     }
 }

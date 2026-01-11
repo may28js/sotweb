@@ -61,3 +61,7 @@ export interface User {
   points: number;
   accessLevel: number;
 }
+
+export interface CartItem extends ShopItem {
+  quantity: number;
+}

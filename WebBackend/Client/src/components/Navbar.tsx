@@ -23,12 +23,12 @@ export default function Navbar() {
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   // 处理导航点击，避免 RSC 请求被中断导致的错误
-  const handleNavClick = (e: React.MouseEvent, path: string) => {
-    e.preventDefault();
-    if (pathname !== path) {
-      router.push(path);
-    }
-  };
+  // const handleNavClick = (e: React.MouseEvent, path: string) => {
+  //   e.preventDefault();
+  //   if (pathname !== path) {
+  //     router.push(path);
+  //   }
+  // };
 
   // 新增：监听滚动事件
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function Navbar() {
           <div className="flex items-center h-full">
             
             {/* Logo Area - Image Only - 64x64 Square */}
-            <Link href="/" onClick={(e) => handleNavClick(e, '/')} className="flex items-center justify-center w-16 h-full bg-transparent hover:bg-white/5 transition-colors border-r border-white/5 relative group cursor-pointer">
+            <Link href="/" className="flex items-center justify-center w-16 h-full bg-transparent hover:bg-white/5 transition-colors border-r border-white/5 relative group cursor-pointer">
                <div className="relative w-8 h-8 transform group-hover:scale-110 transition-transform duration-300">
                 <Image 
                   src="/sot.png" 
@@ -100,15 +100,15 @@ export default function Navbar() {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center h-full">
               
-              <Link href="/" onClick={(e) => handleNavClick(e, '/')} className={getLinkClass('/')}>
+              <Link href="/" className={getLinkClass('/')} prefetch={false}>
                 <span className="text-[18px] font-fzytk tracking-widest">主页</span>
               </Link>
 
-              <Link href="/news" onClick={(e) => handleNavClick(e, '/news')} className={getLinkClass('/news')}>
+              <Link href="/news" className={getLinkClass('/news')} prefetch={false}>
                 <span className="text-[18px] font-fzytk tracking-widest">新闻</span>
               </Link>
 
-              <Link href="/about" onClick={(e) => handleNavClick(e, '/about')} className={getLinkClass('/about')}>
+              <Link href="/events" className={getLinkClass('/events')} prefetch={false}>
                 <span className="text-[18px] font-fzytk tracking-widest">活动</span>
               </Link>
 
@@ -118,7 +118,7 @@ export default function Navbar() {
               <div className="group relative h-full flex items-center">
                 {user ? (
                   <>
-                    <Link href="/shop" onClick={(e) => handleNavClick(e, '/shop')} className={`px-6 h-full flex items-center transition-colors group-hover:text-white cursor-pointer ${pathname.startsWith('/shop') ? 'text-white border-b-4 border-[#FFD700] bg-white/5' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}>
+                    <Link href="/shop" className={`px-6 h-full flex items-center transition-colors group-hover:text-white cursor-pointer ${pathname.startsWith('/shop') ? 'text-white border-b-4 border-[#FFD700] bg-white/5' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`} prefetch={false}>
                       <span className="text-[18px] font-fzytk tracking-widest">商店</span>
                       <ChevronDown className="ml-1 w-4 h-4 opacity-60 flex-shrink-0" />
                     </Link>
@@ -128,35 +128,35 @@ export default function Navbar() {
                          {/* Bubble Arrow */}
                          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1e1e1e] border-t border-l border-white/10 rotate-45"></div>
                          
-                         <Link href="/shop" onClick={(e) => handleNavClick(e, '/shop')} className={dropdownItemClass}>
+                         <Link href="/shop" className={dropdownItemClass}>
                            <ShoppingCart className="w-4 h-4 mr-2" /> 浏览商品
                          </Link>
-                         <Link href="/shop/donate" onClick={(e) => handleNavClick(e, '/shop/donate')} className={dropdownItemClass}>
+                         <Link href="/shop/donate" className={dropdownItemClass}>
                            <TimeFragment iconSize={16} className="mr-2" /> 获取时光碎片
                          </Link>
-                         <Link href="/dashboard" onClick={(e) => handleNavClick(e, '/dashboard')} className={dropdownItemClass}>
+                         <Link href="/dashboard" className={dropdownItemClass}>
                            <History className="w-4 h-4 mr-2 opacity-70" /> 购买记录
                          </Link>
                       </div>
                     </div>
                   </>
                 ) : (
-                  <Link href="/login" onClick={(e) => handleNavClick(e, '/login')} className="px-6 h-full flex items-center text-gray-300 hover:bg-white/5 hover:text-white transition-colors cursor-pointer">
+                  <Link href="/login" className="px-6 h-full flex items-center text-gray-300 hover:bg-white/5 hover:text-white transition-colors cursor-pointer" prefetch={false}>
                     <span className="text-[18px] font-fzytk tracking-widest">商店</span>
                   </Link>
                 )}
               </div>
 
-              <Link href="/play" onClick={(e) => handleNavClick(e, '/play')} className="h-full flex items-center px-6 bg-[#c69c6d]/10 hover:bg-[#c69c6d]/20 transition-colors relative group">
+              <Link href="/play" className="h-full flex items-center px-6 bg-[#c69c6d]/10 hover:bg-[#c69c6d]/20 transition-colors relative group" prefetch={false}>
                 <span className="text-[18px] font-fzytk tracking-widest text-[#c69c6d]">如何开始</span>
                 <CirclePlay className="w-4 h-4 ml-2 text-[#c69c6d]" />
               </Link>
               
-              <Link href="/discord" onClick={(e) => handleNavClick(e, '/discord')} className={getLinkClass('/discord')}>
+              <Link href="/discord" className={getLinkClass('/discord')} prefetch={false}>
                 <span className="text-[18px] font-fzytk tracking-widest">社区</span>
               </Link>
 
-              <Link href="/download" onClick={(e) => handleNavClick(e, '/download')} className={getLinkClass('/download')}>
+              <Link href="/download" className={getLinkClass('/download')} prefetch={false}>
                 <span className="text-[18px] font-fzytk tracking-widest">游戏下载</span>
               </Link>
 
@@ -236,9 +236,9 @@ export default function Navbar() {
                           onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                           className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors cursor-pointer"
                         >
-                          <div className="relative w-11 h-11 rounded-full overflow-hidden border-[2px] border-white shadow-lg">
+                          <div className="relative w-11 h-11 rounded-full overflow-hidden border-[2px] border-[#c69c6d]/80 shadow-lg hover:border-[#c69c6d] transition-colors">
                             <img 
-                              src="/demo-assets/home/default-avatar.jpg?v=1" 
+                              src={user.avatarUrl || "/demo-assets/home/default-avatar.jpg?v=1"} 
                               alt="User" 
                               className="w-full h-full object-cover"
                             />
@@ -348,7 +348,7 @@ export default function Navbar() {
           <div className="px-2 pt-2 pb-3 space-y-1">
             <Link href="/" className="block px-3 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-md cursor-pointer">主页</Link>
             <Link href="/news" className="block px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 rounded-md cursor-pointer">新闻</Link>
-            <Link href="/about" className="block px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 rounded-md cursor-pointer">活动</Link>
+            <Link href="/events" className="block px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 rounded-md cursor-pointer">活动</Link>
 
             <Link href="/shop" className="block px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 rounded-md cursor-pointer">商店</Link>
             <Link href="/play" className="block px-3 py-2 text-sm font-medium text-[#c69c6d] hover:bg-[#c69c6d]/10 rounded-md cursor-pointer">如何开始</Link>

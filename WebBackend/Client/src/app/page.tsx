@@ -84,10 +84,10 @@ export default function Home() {
             
             {/* Intro Text */}
             <div className="text-center">
-              <h1 className="text-yellow-400 text-5xl font-bold font-sans mb-4 tracking-widest">
+              <h1 className="text-yellow-400 text-5xl font-bold mb-4 tracking-widest">
                 欢迎来到时光故事
               </h1>
-              <p className="text-2xl sm:text-[27px] text-gray-200 mb-6 font-sans tracking-wider">
+              <p className="text-2xl sm:text-[27px] text-gray-200 mb-6 tracking-wider">
                 从这里开启你奇妙而经典的时光之旅
               </p>
               <div className="flex flex-row items-center justify-center space-x-4">
@@ -105,7 +105,7 @@ export default function Home() {
           {/* Bottom Row: Latest News */}
           <div className="w-full mt-4 mb-4">
             <div className="w-full py-6 text-left">
-              <h2 className="text-3xl font-sans font-bold text-white mb-6 inline-block border-l-4 border-yellow-400 pl-4">
+              <h2 className="text-3xl font-bold text-white mb-6 inline-block border-l-4 border-yellow-400 pl-4">
                 新闻与动态
               </h2>
               
@@ -186,25 +186,24 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                 <div className="hidden lg:block"></div>
                 <div className="space-y-6 text-left">
-                    <h2 className="text-yellow-400 text-3xl sm:text-4xl lg:text-5xl font-bold font-serif leading-tight">
-                        BEGIN YOUR EPIC JOURNEY
+                    <h2 className="text-yellow-400 text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
+                        开启您的史诗旅程
                     </h2>
                     <p className="text-base sm:text-lg text-gray-300 leading-relaxed max-w-2xl">
-                        Join thousands of players in the ultimate World of Warcraft experience. 
-                        Create your account today and embark on legendary adventures.
+                        与无数情怀玩家一同体验新奇而又熟悉的世界。立即创建账号，踏上传奇冒险。
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
                         <Link 
                             href="/register" 
                             className="inline-flex items-center justify-center px-8 py-3 text-base font-bold text-black bg-yellow-400 hover:bg-yellow-300 rounded-sm transition-all duration-300 shadow-lg hover:shadow-xl"
                         >
-                            Join Now
+                            立即加入
                         </Link>
                         <Link 
                             href="/about" 
                             className="inline-flex items-center justify-center px-8 py-3 text-base font-bold text-white border-2 border-yellow-400 hover:bg-yellow-400 hover:text-black rounded-sm transition-all duration-300"
                         >
-                            Learn More
+                            了解更多
                         </Link>
                     </div>
                 </div>
@@ -224,11 +223,11 @@ export default function Home() {
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-                <h2 className="text-yellow-400 text-4xl sm:text-4xl lg:text-4xl font-bold font-serif mb-4">
-                    SERVER FEATURES
+                <h2 className="text-yellow-400 text-4xl sm:text-4xl lg:text-4xl font-bold mb-4">
+                    服务器特色
                 </h2>
-                <p className="text-lg sm:text-xl font-serif mb-6 text-gray-300 max-w-3xl mx-auto">
-                    Discover the unique features that make our World of Warcraft server the ultimate gaming experience
+                <p className="text-lg sm:text-xl mb-6 text-gray-300 max-w-3xl mx-auto">
+                    探索我们的时光故事服务器，享受独特的游戏机制变化为你带来的终极体验。
                 </p>
             </div>
             
@@ -236,50 +235,50 @@ export default function Home() {
                 {[
                     { 
                         id: 1, 
-                        title: "Embark on Epic Adventures", 
-                        desc: "Explore custom dungeons and raids designed to challenge and reward your skills.",
+                        title: "踏上史诗冒险", 
+                        desc: "探索旨在挑战并奖励您技巧的自定义地下城和团队副本。",
                         image: "/demo-assets/home/art-illustration-1.webp"
                     },
                     { 
                         id: 2, 
-                        title: "Learn as you Play", 
-                        desc: "Master new skills and abilities through our in-depth tutorials and guides.",
+                        title: "边玩边学", 
+                        desc: "通过我们深入的教程和指南掌握新技能和能力。",
                         image: "/demo-assets/home/art-illustration-2.webp"
                     },
                     { 
                         id: 3, 
-                        title: "World City PvP", 
-                        desc: "Experience strategic PvP in our world cities with a focus on teamwork and strategy.",
+                        title: "世界主城 PvP", 
+                        desc: "体验注重团队合作和策略的世界主城战略 PvP。",
                         image: "/demo-assets/home/art-illustration-3.webp"
                     },
                     { 
                         id: 4, 
-                        title: "For Horde Players", 
-                        desc: "Enjoy a balanced PvP experience with a focus on Horde vs Horde combat.",
+                        title: "为了部落", 
+                        desc: "享受注重部落对战的平衡 PvP 体验。",
                         image: "/demo-assets/home/art-illustration-4.webp"
                     },
                     { 
                         id: 5, 
-                        title: "For Alliance Players", 
-                        desc: "Enjoy a balanced PvP experience with a focus on Alliance vs Alliance combat.",
+                        title: "为了联盟", 
+                        desc: "享受注重联盟对战的平衡 PvP 体验。",
                         image: "/demo-assets/home/art-illustration-5.webp"
                     },
                     { 
                         id: 6, 
-                        title: "Guild System", 
-                        desc: "Join or create guilds with enhanced features, shared resources, and exclusive guild content.",
+                        title: "公会系统", 
+                        desc: "加入或创建公会，享受增强功能、共享资源和专属公会内容。",
                         image: "/demo-assets/home/6.avif"
                     },
                     { 
                         id: 7, 
-                        title: "Quality of Life", 
-                        desc: "Enjoy improved gameplay with faster leveling, better loot rates, and convenient features.",
+                        title: "游戏体验优化", 
+                        desc: "享受更快的升级速度、更好的掉落率和便捷功能带来的改进游戏体验。",
                         image: "/demo-assets/home/7.jpg"
                     },
                     { 
                         id: 8, 
-                        title: "Community Support", 
-                        desc: "Get help from our active community and dedicated staff team for the best gaming experience.",
+                        title: "社区支持", 
+                        desc: "从我们活跃的社区和专注的员工团队获得帮助，享受最佳游戏体验。",
                         image: "/demo-assets/home/8.webp"
                     }
                 ].map((feature) => (
@@ -319,11 +318,11 @@ export default function Home() {
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-                <h2 className="text-yellow-400 text-4xl sm:text-4xl lg:text-4xl font-bold font-serif mb-4">
-                    HOW TO GET STARTED
+                <h2 className="text-yellow-400 text-4xl sm:text-4xl lg:text-4xl font-bold mb-4">
+                    如何开始
                 </h2>
-                <p className="text-lg sm:text-xl font-serif mb-6 text-gray-300 max-w-3xl mx-auto uppercase">
-                    Follow these simple steps to join our World of Warcraft server and begin your epic adventure
+                <p className="text-lg sm:text-xl mb-6 text-gray-300 max-w-3xl mx-auto uppercase">
+                    跟随这些简单步骤加入我们的时光故事服务器，开始您的史诗冒险
                 </p>
             </div>
             
@@ -333,11 +332,11 @@ export default function Home() {
                     <div className="flex items-start space-x-4">
                         <div className="flex-shrink-0 w-8 h-8 bg-yellow-400 text-black rounded-full flex items-center justify-center font-bold text-sm">1</div>
                         <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-white mb-2">Register an Account</h4>
+                            <h4 className="text-lg font-semibold text-white mb-2">注册账号</h4>
                             <p className="text-gray-300 leading-relaxed">
-                                To begin, please register an account on our website. Once registered, navigate to the dashboard to create your preferred in-game account and password for login. Users may create a limited number of in-game accounts linked to their website account, subject to specified restrictions.
+                                首先，请在我们的网站上注册一个账号。此账号也将成为你在时光故事游戏服务器的账号。
                                 <br />
-                                <span className="text-yellow-400 font-medium">Kindly ensure to activate your website account by verifying it through the confirmation email sent to your registered email address.</span>
+                                <span className="text-yellow-400 font-medium">请务必使用有效的电子邮箱地址来注册账号，无效的邮箱将危害您的账号安全</span>
                             </p>
                         </div>
                     </div>
@@ -346,9 +345,9 @@ export default function Home() {
                     <div className="flex items-start space-x-4">
                         <div className="flex-shrink-0 w-8 h-8 bg-yellow-400 text-black rounded-full flex items-center justify-center font-bold text-sm">2</div>
                         <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-white mb-2">Download World of Warcraft 3.3.5a</h4>
+                            <h4 className="text-lg font-semibold text-white mb-2">下载时光故事启动器</h4>
                             <p className="text-gray-300 leading-relaxed">
-                                To access the game, it is necessary to have the World of Warcraft client version 3.3.5a installed.
+                                我们将通过时光故事启动器管理、下载更新和进入游戏
                             </p>
                         </div>
                     </div>
@@ -357,9 +356,9 @@ export default function Home() {
                     <div className="flex items-start space-x-4">
                         <div className="flex-shrink-0 w-8 h-8 bg-yellow-400 text-black rounded-full flex items-center justify-center font-bold text-sm">3</div>
                         <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-white mb-2">Configure Realmlist</h4>
+                            <h4 className="text-lg font-semibold text-white mb-2">安装与配置</h4>
                             <p className="text-gray-300 leading-relaxed">
-                                Set realmlist to <code className="bg-black/50 px-2 py-1 rounded text-yellow-400 font-mono">logon.myserver.com</code> in <code className="bg-black/50 px-2 py-1 rounded text-yellow-400 font-mono">WTF/Config.wtf</code>
+                                安装时光故事启动器，运行启动器并按照提示配置或下载/更新游戏
                             </p>
                         </div>
                     </div>
@@ -368,9 +367,9 @@ export default function Home() {
                     <div className="flex items-start space-x-4">
                         <div className="flex-shrink-0 w-8 h-8 bg-yellow-400 text-black rounded-full flex items-center justify-center font-bold text-sm">4</div>
                         <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-white mb-2">Start Playing</h4>
+                            <h4 className="text-lg font-semibold text-white mb-2">开始游戏</h4>
                             <p className="text-gray-300 leading-relaxed">
-                                Start the game by Wow.exe and enter your game account credentials created in the dashboard.
+                                通过时光故事启动器启动游戏，并输入您注册的账号和密码开始游戏。
                             </p>
                         </div>
                     </div>
@@ -378,7 +377,7 @@ export default function Home() {
 
                 <div className="mt-8 pt-6 border-t border-white/10 text-center">
                     <p className="text-gray-300">
-                        Have any questions, contact us at <a className="px-1 text-yellow-400 hover:text-yellow-200 font-medium" href="mailto:support@nextvision.cms">support@nextvision.cms</a> or navigate to the <a className="px-1 text-yellow-400 hover:text-yellow-200 font-medium" href="/faq">FAQ</a> for more information.
+                        如有任何问题，请在我们<Link className="px-1 text-yellow-400 hover:text-yellow-200 font-medium" href="/discord">社区</Link>留言 或访问我们的 <a className="px-1 text-yellow-400 hover:text-yellow-200 font-medium" href="https://kook.vip/PRzXsA" target="_blank">KOOK频道</a> 获取更多信息。
                     </p>
                 </div>
             </div>

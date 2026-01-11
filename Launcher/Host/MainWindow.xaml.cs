@@ -32,6 +32,7 @@ namespace StoryOfTimeLauncher
         private readonly IPatcher _patcher;
         private readonly GameInspector _gameInspector; // The Officer
         private readonly System.Net.Http.HttpClient _httpClient;
+        private readonly UpdateService _updateService;
 
         private ClientManifest? _cachedManifest;
         private double _displaySpeed = 0;
@@ -52,6 +53,7 @@ namespace StoryOfTimeLauncher
             _fileSanitizer = new FileSanitizer();
             _patcher = new Patcher();
             _httpClient = new System.Net.Http.HttpClient();
+            _updateService = new UpdateService(new System.Net.Http.HttpClient());
             
             // Initialize the Officer
             _gameInspector = new GameInspector(_configService, _gameService, _fileSanitizer);
@@ -116,6 +118,33 @@ namespace StoryOfTimeLauncher
                 // Start the State Machine
                 // Active Handshake: Don't wait for app_ready, send status proactively after navigation
                 await Task.Delay(500); // Wait for navigation to start
+
+                // Priority #0: Launcher Auto-Update
+                UpdateOverlay.Visibility = Visibility.Visible;
+                UpdateStatusText.Text = "正在检查启动器更新...";
+                webView.Visibility = Visibility.Collapsed; // Hide WebView to ensure Overlay is visible
+
+                bool hasUpdate = false;
+                try 
+                {
+                    hasUpdate = await _updateService.CheckForUpdatesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[MainWindow] Update check failed: {ex.Message}");
+                }
+
+                if (hasUpdate)
+                {
+                    UpdateStatusText.Text = $"发现新版本: {_updateService.LatestVersion}";
+                    UpdateConfirmButton.Visibility = Visibility.Visible;
+                    // Stop here, wait for user interaction
+                    return;
+                }
+                
+                // No update or check failed, proceed
+                UpdateOverlay.Visibility = Visibility.Collapsed;
+                webView.Visibility = Visibility.Visible;
                 
                 // Phase 1: Determine Initial State
                 await DetermineInitialStateAsync();
@@ -197,6 +226,30 @@ namespace StoryOfTimeLauncher
                 ".ico" => "image/x-icon",
                 _ => "application/octet-stream"
             };
+        }
+
+        private async void UpdateConfirmButton_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateConfirmButton.Visibility = Visibility.Collapsed;
+            UpdateProgressBar.Visibility = Visibility.Visible;
+            UpdateStatusText.Text = "正在下载更新...";
+
+            var progress = new Progress<double>(p => 
+            {
+                UpdateProgressBar.Value = p;
+                UpdateStatusText.Text = $"正在下载更新... {p:F1}%";
+            });
+
+            try
+            {
+                await _updateService.DownloadAndInstallAsync(progress);
+            }
+            catch (Exception ex)
+            {
+                UpdateStatusText.Text = "更新失败: " + ex.Message;
+                UpdateConfirmButton.Visibility = Visibility.Visible;
+                UpdateConfirmButton.Content = "重试";
+            }
         }
 
         private async Task DetermineInitialStateAsync()
@@ -291,7 +344,7 @@ namespace StoryOfTimeLauncher
             }
         }
 
-        private void WebView_WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+        private async void WebView_WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             try
             {
@@ -367,10 +420,47 @@ namespace StoryOfTimeLauncher
                             }
                         }
                         break;
+                    case "perform_launcher_update":
+                        await PerformLauncherUpdateAsync();
+                        break;
                     // TODO: Re-implement game logic handlers
                 }
             }
             catch (Exception) { /* Ignore */ }
+        }
+
+        private async Task CheckLauncherUpdateAsync()
+        {
+            try 
+            {
+                if (await _updateService.CheckForUpdatesAsync())
+                {
+                    SendToFrontend("launcher_update_available", new { version = _updateService.LatestVersion });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[LauncherUpdate] Check failed: {ex.Message}");
+            }
+        }
+
+        private async Task PerformLauncherUpdateAsync()
+        {
+            SendToFrontend("launcher_update_progress", new { progress = 0 });
+            
+            var progress = new Progress<double>(p => 
+            {
+                SendToFrontend("launcher_update_progress", new { progress = p });
+            });
+            
+            try
+            {
+                await _updateService.DownloadAndInstallAsync(progress);
+            }
+            catch (Exception ex)
+            {
+                SendToFrontend("error", new { message = "Launcher update failed: " + ex.Message });
+            }
         }
 
         private void TogglePause()

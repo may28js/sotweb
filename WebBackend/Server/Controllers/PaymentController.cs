@@ -69,7 +69,7 @@ namespace StoryOfTime.Server.Controllers
             
             bool isSuccess = invoice != null && (invoice.result == 100 || invoice.message == "Successful operation");
             string? payLink = invoice?.data?.pay_link ?? invoice?.payLink;
-            string? trackId = invoice?.data?.trackId.ToString() ?? invoice?.trackId;
+            string? trackId = invoice?.data?.trackId.ToString() ?? invoice?.trackId?.ToString();
 
             if (!isSuccess || string.IsNullOrEmpty(payLink))
             {
@@ -89,15 +89,19 @@ namespace StoryOfTime.Server.Controllers
         [HttpPost("webhook")]
         public async Task<IActionResult> Webhook([FromBody] OxapayWebhookRequest request)
         {
-            _logger.LogInformation($"Webhook received: {request.trackId} - {request.status}");
+            _logger.LogInformation($"Webhook received: OrderId={request.orderId}, Status={request.status}, TrackId={request.trackId}");
 
             // Verify signature (Skipped for now, but essential for production)
             // if (!_oxapayService.ValidateSignature(...)) return BadRequest();
 
-            if (request.status != "Paid" && request.status != "Completed") // Adjust based on actual Oxapay status
+            // Oxapay sends status in lowercase (e.g., "paid", "expired", "waiting")
+            // We use case-insensitive comparison to be safe.
+            string status = request.status.ToLower();
+
+            if (status != "paid" && status != "completed") 
             {
-                 // Handle other statuses if needed
-                 return Ok();
+                 _logger.LogInformation($"Ignoring status: {request.status}");
+                 return Ok("ok"); // Always return "ok" to acknowledge receipt
             }
 
             var transaction = await _context.PaymentTransactions
@@ -107,12 +111,13 @@ namespace StoryOfTime.Server.Controllers
             if (transaction == null)
             {
                 _logger.LogWarning($"Transaction not found for OrderId: {request.orderId}");
-                return NotFound();
+                return NotFound(); // This might cause Oxapay to retry, which is good
             }
 
             if (transaction.Status == "Completed")
             {
-                return Ok(); // Already processed
+                _logger.LogInformation($"Transaction {request.orderId} already completed.");
+                return Ok("ok");
             }
 
             // Verify amount if needed
@@ -137,8 +142,10 @@ namespace StoryOfTime.Server.Controllers
             });
 
             await _context.SaveChangesAsync();
+            _logger.LogInformation($"Transaction {request.orderId} processed successfully. Points added: {pointsToAdd}");
 
-            return Ok();
+            // Oxapay requires the response body to be exactly "ok" (or json with result)
+            return Ok("ok");
         }
     }
 

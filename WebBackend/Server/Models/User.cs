@@ -24,6 +24,8 @@ namespace StoryOfTime.Server.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Points { get; set; } = 0; // Site currency
 
+        public string? AvatarUrl { get; set; } // Custom Avatar URL
+
         // Constants for Access Levels
         public const int Level_User = 0;
         public const int Level_Moderator = 1; // News, Support

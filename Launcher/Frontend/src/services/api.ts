@@ -1,4 +1,4 @@
-import type { NewsItem, ShopItem, PatchNoteItem, LauncherConfig, ServerStatus, User } from '../types';
+import type { NewsItem, ShopItem, PatchNoteItem, LauncherConfig, ServerStatus, User, CartItem } from '../types';
 
 // Placeholder for VPS API URL
 let API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://shiguanggushi.xyz/api';
@@ -27,6 +27,57 @@ const loadConfig = async () => {
     }
   } catch (e) {
     console.warn("Failed to load config.json, using defaults", e);
+  }
+};
+
+export const cartService = {
+  getCart: async (token: string): Promise<CartItem[]> => {
+    if (ENABLE_MOCK) return [];
+    try {
+        const response = await fetch(`${API_BASE_URL}/Cart`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) return await response.json();
+        if (response.status === 404) return [];
+        return [];
+    } catch (e) {
+        console.error("Cart fetch failed", e);
+        return [];
+    }
+  },
+
+  addToCart: async (token: string, itemId: number, quantity: number): Promise<void> => {
+    if (ENABLE_MOCK) return;
+    try {
+        await fetch(`${API_BASE_URL}/Cart/add`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({ shopItemId: itemId, quantity })
+        });
+    } catch (e) { console.error("Add to cart failed", e); }
+  },
+
+  removeFromCart: async (token: string, itemId: number): Promise<void> => {
+    if (ENABLE_MOCK) return;
+    try {
+        await fetch(`${API_BASE_URL}/Cart/${itemId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+    } catch (e) { console.error("Remove from cart failed", e); }
+  },
+
+  clearCart: async (token: string): Promise<void> => {
+    if (ENABLE_MOCK) return;
+    try {
+        await fetch(`${API_BASE_URL}/Cart/clear`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+    } catch (e) { console.error("Clear cart failed", e); }
   }
 };
 

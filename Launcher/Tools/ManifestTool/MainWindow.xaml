@@ -1,0 +1,70 @@
+<Window x:Class="ManifestTool.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="时光故事 - 清单生成工具" Height="600" Width="800"
+        Background="#1e1e1e" Foreground="White" WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Text="Manifest Generator Tool" FontSize="24" FontWeight="Bold" Foreground="#EAB308" Margin="0,0,0,20"/>
+
+        <!-- 1. Path Selection -->
+        <GroupBox Header="1. 游戏客户端路径" BorderBrush="#444" Foreground="#ccc" Margin="0,0,0,15" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="PathBox" Height="30" VerticalContentAlignment="Center" Background="#333" Foreground="White" BorderThickness="0" Padding="5"/>
+                <Button Content="浏览..." Grid.Column="1" Width="80" Height="30" Margin="10,0,0,0" Click="BrowseButton_Click" Background="#444" Foreground="White" BorderThickness="0"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- 2. Settings -->
+        <GroupBox Header="2. 生成设置" BorderBrush="#444" Foreground="#ccc" Margin="0,0,0,15" Padding="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Version -->
+                <TextBlock Text="补丁版本 (Version ID):" VerticalAlignment="Center"/>
+                <TextBox x:Name="VersionBox" Grid.Column="1" Margin="10,0,0,0" Height="25" Background="#333" Foreground="White" BorderThickness="0" Text="1"/>
+
+                <!-- Base URL -->
+                <TextBlock Text="下载 Base URL:" Grid.Column="3" VerticalAlignment="Center"/>
+                <TextBox x:Name="UrlBox" Grid.Column="4" Margin="10,0,0,0" Height="25" Background="#333" Foreground="White" BorderThickness="0" Text="https://shiguanggushi.xyz/patch/"/>
+            
+                <CheckBox x:Name="ComputeMd5Check" Grid.Row="1" Grid.ColumnSpan="5" Content="计算 MD5 (耗时，生成 Patch 清单必须勾选)" IsChecked="True" Margin="0,10,0,0" Foreground="White"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- 3. Actions -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,15">
+            <Button Content="生成 Base Manifest (本地)" Width="200" Height="40" Margin="0,0,10,0" Click="GenerateBase_Click" Background="#2563EB" Foreground="White" BorderThickness="0"/>
+            <Button Content="生成 Patch Manifest (远程)" Width="200" Height="40" Click="GeneratePatch_Click" Background="#EAB308" Foreground="Black" BorderThickness="0"/>
+        </StackPanel>
+
+        <!-- 4. Progress -->
+        <ProgressBar x:Name="ProgressBar" Grid.Row="3" Height="4" Background="#333" Foreground="#EAB308" BorderThickness="0" Margin="0,0,0,10"/>
+
+        <!-- 5. Log -->
+        <TextBox x:Name="LogBox" Grid.Row="4" Background="#111" Foreground="#aaa" BorderThickness="1" BorderBrush="#333" 
+                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontFamily="Consolas"/>
+    </Grid>
+</Window>

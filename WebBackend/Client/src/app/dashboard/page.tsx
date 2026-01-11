@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import PurchaseHistory from '../../components/dashboard/PurchaseHistory';
+import AvatarSelector from '../../components/dashboard/AvatarSelector';
 import TimeFragment from '../../components/TimeFragment';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -12,11 +13,14 @@ export default function DashboardPage() {
   const { user, logout, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, change-password, etc.
+  const [isAvatarSelectorOpen, setIsAvatarSelectorOpen] = useState(false);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [countdown, setCountdown] = useState(0);
   const [message, setMessage] = useState({ text: '', type: 'success' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,6 +29,28 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [authLoading, user, router]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  const handleSendCode = async () => {
+    if (countdown > 0) return;
+    
+    try {
+      setMessage({ text: '正在发送验证码...', type: 'success' });
+      await api.post('/auth/send-verification-code');
+      setMessage({ text: '验证码已发送至您的邮箱，请查收', type: 'success' });
+      setCountdown(60);
+    } catch (error: any) {
+      const errorMsg = error.response?.data || '发送验证码失败';
+      setMessage({ text: typeof errorMsg === 'string' ? errorMsg : '发送失败', type: 'error' });
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,18 +66,26 @@ export default function DashboardPage() {
       return;
     }
 
+    if (!verificationCode) {
+      setMessage({ text: '请输入验证码', type: 'error' });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       await api.post('/auth/change-password', {
         currentPassword,
-        newPassword
+        newPassword,
+        confirmNewPassword: confirmPassword,
+        verificationCode
       });
       
       setMessage({ text: '密码修改成功', type: 'success' });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      setVerificationCode('');
     } catch (error: any) {
       const errorMsg = error.response?.data || '修改密码失败，请检查当前密码是否正确';
       setMessage({ text: typeof errorMsg === 'string' ? errorMsg : '修改密码失败', type: 'error' });
@@ -80,21 +114,21 @@ export default function DashboardPage() {
 
       {/* Main Container */}
       <div className="max-w-7xl w-full bg-[#212121]/70 backdrop-blur-sm rounded-sm shadow-md border border-white/5 p-8 my-12 relative z-10">
-        <h1 className="text-2xl font-bold text-white mb-6 animate-fadeIn">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-white mb-6 animate-fadeIn">个人中心</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left Column: Profile Section */}
           <div className="lg:col-span-1">
             <div className="bg-[#272727]/50 rounded-sm p-6 border border-white/5">
-              <h2 className="text-xl font-semibold text-white mb-4">Profile</h2>
+              <h2 className="text-xl font-semibold text-white mb-4">个人资料</h2>
               
               <div className="flex flex-col items-center mb-6">
-                <div className="relative cursor-pointer group">
+                <div className="relative cursor-pointer group" onClick={() => setIsAvatarSelectorOpen(true)}>
                   <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/20 group-hover:border-yellow-500/50 transition-colors">
                     <Image 
-                      src="/images/dashboard/default-avatar.jpg" 
-                      alt="User Avatar" 
+                      src={user.avatarUrl || "/images/dashboard/default-avatar.jpg"} 
+                      alt="用户头像" 
                       width={96} 
                       height={96} 
                       className="w-full h-full object-cover"
@@ -105,9 +139,12 @@ export default function DashboardPage() {
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-camera w-6 h-6 text-white"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"></path><circle cx="12" cy="13" r="3"></circle></svg>
                   </div>
                 </div>
-                <button className="mt-2 text-sm text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-1 cursor-pointer">
+                <button 
+                  onClick={() => setIsAvatarSelectorOpen(true)}
+                  className="mt-2 text-sm text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-1 cursor-pointer"
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload w-4 h-4"><path d="M12 3v12"></path><path d="m17 8-5-5-5 5"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path></svg>
-                  Change Avatar
+                  修改头像
                 </button>
               </div>
 
@@ -115,53 +152,53 @@ export default function DashboardPage() {
                 <div className="space-y-1">
                    <p className="text-sm text-gray-400 font-medium flex items-center">
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user w-4 h-4 mr-2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                     Display Name:
+                     用户名称:
                    </p>
                    <p className="text-white font-light pl-6">{user.username}</p>
                 </div>
                 <div className="space-y-1">
                    <p className="text-sm text-gray-400 font-medium flex items-center">
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mail w-4 h-4 mr-2"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
-                     Email:
+                     电子邮箱:
                    </p>
                    <p className="text-white font-light pl-6">{user.email}</p>
                 </div>
                 <div className="space-y-1">
                    <p className="text-sm text-gray-400 font-medium flex items-center">
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield-check w-4 h-4 mr-2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
-                     Role:
+                     角色:
                    </p>
-                   <p className="text-white font-light pl-6">{user.accessLevel > 0 ? 'Admin' : 'Player'}</p>
+                   <p className="text-white font-light pl-6">{user.accessLevel > 0 ? '管理员' : '玩家'}</p>
                 </div>
                 <div className="space-y-1">
                    <p className="text-sm text-gray-400 font-medium flex items-center">
                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-calendar w-4 h-4 mr-2"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path></svg>
-                     Member Since:
+                     注册时间:
                    </p>
-                   <p className="text-white font-light pl-6">October 17, 2025</p>
+                   <p className="text-white font-light pl-6">2025年10月17日</p>
                 </div>
               </div>
 
               <div className="mt-6 pt-4 border-t border-white/10">
-                <h3 className="text-sm font-medium text-gray-400 mb-3">Account Settings</h3>
+                <h3 className="text-sm font-medium text-gray-400 mb-3">账户设置</h3>
                 <div className="flex flex-col gap-2">
                   <button className="h-9 px-4 py-2 w-full bg-teal-600/20 hover:bg-teal-600/30 text-teal-400 hover:text-teal-300 border border-teal-500/30 hover:border-teal-500/50 rounded-md text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mail w-4 h-4"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
-                    Change Email
+                    修改邮箱
                   </button>
                   <button 
                     onClick={() => setActiveTab('change-password')}
                     className="h-9 px-4 py-2 w-full bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/50 rounded-md text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield-check w-4 h-4"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
-                    Change Password
+                    修改密码
                   </button>
                   <button 
                     onClick={logout}
                     className="h-9 px-4 py-2 w-full bg-gray-600/20 hover:bg-gray-600/30 text-gray-400 hover:text-gray-300 border border-gray-500/30 hover:border-gray-500/50 rounded-md text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-log-out w-4 h-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
-                    Sign Out
+                    退出登录
                   </button>
                 </div>
               </div>
@@ -182,14 +219,14 @@ export default function DashboardPage() {
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <Image src="/demo-assets/store/currency-green-large.png" width={48} height={48} alt="免费时光碎片" className="w-5 h-5 md:w-6 md:h-6" />
-                            <h3 className="text-sm md:text-md font-semibold text-emerald-200">免费时光碎片</h3>
+                            <Image src="/demo-assets/store/currency-green-large.png" width={48} height={48} alt="时光之尘" className="w-5 h-5 md:w-6 md:h-6" />
+                            <h3 className="text-sm md:text-md font-semibold text-emerald-200">时光之尘</h3>
                           </div>
                           <p className="text-xl md:text-2xl font-bold text-white pl-7">0</p>
                         </div>
                         <div className="flex items-center sm:justify-end">
                           <button className="h-9 bg-emerald-500 hover:bg-emerald-400 text-black px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer w-full sm:w-auto flex items-center justify-center gap-1.5 shadow-md">
-                            <span className="whitespace-nowrap uppercase">Vote Now</span>
+                            <span className="whitespace-nowrap uppercase">立即参加</span>
                           </button>
                         </div>
                       </div>
@@ -209,7 +246,7 @@ export default function DashboardPage() {
                             onClick={() => router.push('/shop/donate')}
                             className="h-9 bg-yellow-500 hover:bg-yellow-400 text-black px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer w-full sm:w-auto flex items-center justify-center gap-1.5 shadow-md"
                           >
-                            <span className="whitespace-nowrap uppercase">Purchase More</span>
+                            <span className="whitespace-nowrap uppercase">充值</span>
                           </button>
                         </div>
                       </div>
@@ -223,26 +260,26 @@ export default function DashboardPage() {
                 {/* Dashboard Tools */}
                 <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Dashboard Tools</h3>
+                    <h3 className="text-lg font-semibold text-white">功能工具</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <ToolCard 
-                      title="Unstuck Character" 
-                      desc="Free your character from stuck positions"
+                      title="角色脱离卡死" 
+                      desc="当角色卡住时使用此功能"
                       image="/images/dashboard/unstuck-tool-bg.avif"
                       color="red"
-                      onClick={() => {}}
+                      onClick={() => router.push('/dashboard/unstuck')}
                     />
                     <ToolCard 
-                      title="Teleport Character" 
-                      desc="Instantly travel to any location"
+                      title="角色传送" 
+                      desc="快速传送到指定地点"
                       image="/images/dashboard/teleport-tool-bg.avif"
                       color="green"
-                      onClick={() => {}}
+                      onClick={() => router.push('/dashboard/teleport')}
                     />
                     <ToolCard 
-                      title="Shop" 
-                      desc="Browse and purchase items"
+                      title="商店" 
+                      desc="浏览并购买商品"
                       image="/images/dashboard/shop-tool-bg.avif"
                       color="purple"
                       onClick={() => router.push('/store')}
@@ -253,11 +290,11 @@ export default function DashboardPage() {
                 {/* Recruitment Invitations */}
                 <div className="mt-6 p-3 md:p-4 bg-white/5 rounded-lg border border-white/10">
                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <h3 className="text-lg font-semibold text-white">Recruitment Invitations</h3>
+                      <h3 className="text-lg font-semibold text-white">招募邀请</h3>
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <button className="h-9 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2">
                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mail w-4 h-4"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
-                           <span>View Invitations</span>
+                           <span>查看邀请</span>
                         </button>
                       </div>
                    </div>
@@ -266,15 +303,15 @@ export default function DashboardPage() {
                 {/* Game Accounts */}
                 <div className="mt-6 p-3 md:p-4 bg-white/5 rounded-lg border border-white/10">
                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                      <h3 className="text-lg font-semibold text-white">Game Accounts</h3>
+                      <h3 className="text-lg font-semibold text-white">游戏账号</h3>
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                          <button className="h-9 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus w-4 h-4"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-                            <span>Create New</span>
+                            <span>创建新账号</span>
                          </button>
                          <button className="h-9 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user-plus w-4 h-4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg>
-                            <span>Add Existing</span>
+                            <span>绑定已有账号</span>
                          </button>
                       </div>
                    </div>
@@ -283,46 +320,46 @@ export default function DashboardPage() {
                      <div className="relative rounded-md p-3 md:p-4 bg-[#272727]">
                        <div className="flex space-x-1 mb-4 border-b border-white/10 overflow-x-auto">
                          <button className="flex items-center gap-1.5 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap text-yellow-400 border-b-2 border-yellow-400">
-                           Overview
+                           概览
                          </button>
                          <button className="flex items-center gap-1.5 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap text-gray-400 hover:text-white">
-                           Logging
+                           日志
                          </button>
                          <button className="flex items-center gap-1.5 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap text-gray-400 hover:text-white">
-                           Actions
+                           操作
                          </button>
                        </div>
                        
                        <div className="space-y-4">
-                          <p className="text-xs text-gray-500 mb-3">Basic account information and current status</p>
+                          <p className="text-xs text-gray-500 mb-3">基本账号信息和当前状态</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                             <div className="space-y-2">
                               <span className="flex items-center gap-1 text-sm text-gray-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bookmark text-red-400 w-4 h-4"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>
-                                <span className="text-red-400">Account Id</span>
+                                <span className="text-red-400">账号 ID</span>
                               </span>
                               <p className="pl-5 text-sm text-white/70 font-bold">{user.id || '79'}</p>
                             </div>
                             <div className="space-y-2">
                                <span className="flex items-center gap-1 text-sm text-teal-400">
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user-round text-teal-400 w-4 h-4"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg>
-                                  <span>Username</span>
+                                  <span>用户名</span>
                                </span>
                                <p className="pl-5 text-sm text-white/70 font-bold">{user.username}</p>
                             </div>
                             <div className="space-y-2">
                                <span className="flex items-center gap-1 text-sm text-purple-400">
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-activity text-purple-400 w-4 h-4"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg>
-                                  <span>Activity</span>
+                                  <span>活动状态</span>
                                </span>
-                               <p className="pl-5 text-xs font-medium text-red-400/50">Offline</p>
+                               <p className="pl-5 text-xs font-medium text-red-400/50">离线</p>
                             </div>
                             <div className="space-y-2">
                                <span className="flex items-center gap-1 text-sm text-pink-400">
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chart-no-axes-column text-pink-400 w-4 h-4"><path d="M5 21v-6"></path><path d="M12 21V3"></path><path d="M19 21V9"></path></svg>
-                                  <span>Status</span>
+                                  <span>账号状态</span>
                                </span>
-                               <p className="text-sm text-green-400">Good Standing</p>
+                               <p className="text-sm text-green-400">状态良好</p>
                             </div>
                           </div>
                        </div>
@@ -336,12 +373,12 @@ export default function DashboardPage() {
             {activeTab === 'change-password' && (
               <div className="bg-[#272727]/50 rounded-sm p-6 border border-white/5 animate-fadeIn">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-white">Change Password</h2>
+                    <h2 className="text-xl font-bold text-white">修改密码</h2>
                     <button 
                         onClick={() => setActiveTab('dashboard')}
                         className="text-gray-400 hover:text-white transition-colors"
                     >
-                        Back to Dashboard
+                        返回个人中心
                     </button>
                 </div>
                 
@@ -353,7 +390,7 @@ export default function DashboardPage() {
 
                 <form onSubmit={handleChangePassword} className="space-y-6 max-w-md">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Current Password</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">当前密码</label>
                     <input
                       type="password"
                       required
@@ -363,7 +400,32 @@ export default function DashboardPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">New Password</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">邮箱验证码</label>
+                    <div className="flex gap-2">
+                        <input
+                        type="text"
+                        required
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        placeholder="请输入6位验证码"
+                        className="flex-1 bg-[#1a1a1a] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                        <button
+                        type="button"
+                        onClick={handleSendCode}
+                        disabled={countdown > 0}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            countdown > 0 
+                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                            : 'bg-yellow-600 hover:bg-yellow-500 text-white'
+                        }`}
+                        >
+                        {countdown > 0 ? `${countdown}秒后重试` : '发送验证码'}
+                        </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">新密码</label>
                     <input
                       type="password"
                       required
@@ -373,7 +435,7 @@ export default function DashboardPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Confirm New Password</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">确认新密码</label>
                     <input
                       type="password"
                       required
@@ -392,7 +454,7 @@ export default function DashboardPage() {
                           : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20'
                       }`}
                     >
-                      {isSubmitting ? 'Updating Password...' : 'Update Password'}
+                      {isSubmitting ? '正在更新密码...' : '更新密码'}
                     </button>
                   </div>
                 </form>
@@ -402,6 +464,12 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      
+      <AvatarSelector 
+        isOpen={isAvatarSelectorOpen} 
+        onClose={() => setIsAvatarSelectorOpen(false)} 
+        currentAvatar={user.avatarUrl} 
+      />
     </div>
   );
 }

@@ -10,6 +10,9 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
+using StoryOfTime.Server.Services;
+using Microsoft.Extensions.Caching.Memory;
+
 namespace StoryOfTime.Server.Controllers
 {
     [Route("api/[controller]")]
@@ -19,17 +22,61 @@ namespace StoryOfTime.Server.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
+        private readonly IEmailService _emailService;
+        private readonly IMemoryCache _cache;
 
         // ACore SRP6 Constants
         private static readonly BigInteger N = BigInteger.Parse("0894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7", System.Globalization.NumberStyles.HexNumber);
         private static readonly BigInteger g = 7;
 
-        public AuthController(ApplicationDbContext context, IConfiguration configuration, ILogger<AuthController> logger)
+        public AuthController(ApplicationDbContext context, IConfiguration configuration, ILogger<AuthController> logger, IEmailService emailService, IMemoryCache cache)
         {
             _context = context;
             _configuration = configuration;
             _logger = logger;
+            _emailService = emailService;
+            _cache = cache;
         }
+
+        [HttpPost("send-verification-code")]
+        [Authorize]
+        public async Task<IActionResult> SendVerificationCode()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound("User not found.");
+
+            // Generate 6-digit code
+            var code = new Random().Next(100000, 999999).ToString();
+            
+            // Store in cache for 10 minutes
+            _cache.Set($"VerifyCode_{userId}", code, TimeSpan.FromMinutes(10));
+
+            // Send Email
+            var subject = "【Story Of Time】您的验证码";
+            var body = $@"
+                <h3>您的验证码是：<span style='color:#FFD700; font-size: 24px;'>{code}</span></h3>
+                <p>该验证码用于修改账户密码，请勿泄露给他人。</p>
+                <p>验证码有效期为 10 分钟。</p>
+            ";
+
+            try 
+            {
+                await _emailService.SendEmailAsync(user.Email, subject, body);
+                return Ok(new { message = "验证码已发送到您的注册邮箱，请查收。" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send verification email.");
+                return StatusCode(500, "发送验证码失败，请检查服务器邮件配置或联系管理员。");
+            }
+        }
+
 
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register(UserDto request)
@@ -284,7 +331,8 @@ namespace StoryOfTime.Server.Controllers
                 user.Username,
                 user.Email,
                 user.Points,
-                user.AccessLevel
+                user.AccessLevel,
+                user.AvatarUrl
             });
         }
 
@@ -299,6 +347,15 @@ namespace StoryOfTime.Server.Controllers
             {
                 return NotFound("User not found.");
             }
+
+            // Verify Code
+            if (!_cache.TryGetValue($"VerifyCode_{userId}", out string? cachedCode) || cachedCode != request.VerificationCode)
+            {
+                return BadRequest("验证码无效或已过期。");
+            }
+
+            // Clean up code after use (prevent reuse)
+            _cache.Remove($"VerifyCode_{userId}");
 
             if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
             {
@@ -370,5 +427,6 @@ namespace StoryOfTime.Server.Controllers
         public string CurrentPassword { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
         public string ConfirmNewPassword { get; set; } = string.Empty;
+        public string VerificationCode { get; set; } = string.Empty;
     }
 }

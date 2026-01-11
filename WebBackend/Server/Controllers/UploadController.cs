@@ -41,8 +41,15 @@ namespace StoryOfTime.Server.Controllers
             {
                 // 2. Prepare storage path
                 // Save to: wwwroot/uploads/{type}/yyyy/MM/
-                var subFolder = type == "store" ? "store" : "news"; // Enforce folder names
+                // Allow 'avatar' as a type
+                var subFolder = "news";
+                if (type == "store") subFolder = "store";
+                else if (type == "avatar") subFolder = "avatars";
+
                 var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                
+                // For avatars, maybe we don't need date structure? Or maybe we do to keep it organized.
+                // Let's keep date structure for all uploads to avoid folder clutter.
                 var uploadsFolder = Path.Combine(webRootPath, "uploads", subFolder, DateTime.Now.ToString("yyyy"), DateTime.Now.ToString("MM"));
                 
                 Console.WriteLine($"[Upload] Saving to: {uploadsFolder}");
@@ -82,7 +89,10 @@ namespace StoryOfTime.Server.Controllers
         {
             try
             {
-                var subFolder = type == "store" ? "store" : "news";
+                var subFolder = "news";
+                if (type == "store") subFolder = "store";
+                else if (type == "avatar") subFolder = "avatars";
+
                 var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
                 var targetFolder = Path.Combine(webRootPath, "uploads", subFolder);
 

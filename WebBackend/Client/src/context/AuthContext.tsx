@@ -11,6 +11,7 @@ interface User {
   email: string;
   accessLevel: number;
   points: number;
+  avatarUrl?: string;
 }
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ interface AuthContextType {
   login: (token: string) => void;
   logout: () => void;
   updatePoints: (points: number) => void;
+  updateAvatar: (url: string) => void;
   isLoading: boolean;
 }
 
@@ -60,7 +62,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     username: data.username,
                     email: data.email,
                     accessLevel: data.accessLevel,
-                    points: data.points
+                    points: data.points,
+                    avatarUrl: data.avatarUrl
                 });
               }
             } catch (apiError) {
@@ -96,8 +99,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateAvatar = (url: string) => {
+    if (user) {
+      setUser({ ...user, avatarUrl: url });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, updatePoints, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, updatePoints, updateAvatar, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

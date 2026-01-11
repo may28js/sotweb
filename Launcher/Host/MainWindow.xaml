@@ -14,5 +14,21 @@
     </WindowChrome.WindowChrome>
     <Grid>
         <wv2:WebView2 Name="webView" DefaultBackgroundColor="Transparent" />
+
+        <!-- Update Overlay -->
+        <Grid Name="UpdateOverlay" Visibility="Collapsed" Background="#1a1a1a" Panel.ZIndex="100">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Name="UpdateStatusText" Text="正在检查更新..." Foreground="White" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                <ProgressBar Name="UpdateProgressBar" Width="400" Height="6" Visibility="Collapsed" Background="#333" Foreground="#EAB308" BorderThickness="0"/>
+                <Button Name="UpdateConfirmButton" Content="立即更新" Visibility="Collapsed" Margin="0,20,0,0" Width="120" Height="35" 
+                        Background="#EAB308" Foreground="Black" BorderThickness="0" Cursor="Hand" Click="UpdateConfirmButton_Click">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="4"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

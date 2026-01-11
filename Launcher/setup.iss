@@ -1,5 +1,5 @@
 #define MyAppName "时光故事启动器"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "StoryOfTime"
 #define MyAppURL "https://shiguanggushi.xyz"
 #define MyAppExeName "SotLauncher.exe"
@@ -21,11 +21,16 @@ DisableProgramGroupPage=yes
 ; Remove the following line to run in administrative install mode (install for all users.)
 PrivilegesRequired=lowest
 OutputDir=Installer
-OutputBaseFilename=StoryOfTimeLauncher_Setup
+OutputBaseFilename=StoryOfTimeLauncher_Setup_v{#MyAppVersion}
 SetupIconFile=Host\sot.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+CloseApplications=yes
+RestartApplications=yes
+; 美化配置
+WizardImageFile=图片\phoenix-alar.jpg
+WizardSmallImageFile=Host\sot.ico
 
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "Languages\ChineseSimplified.isl"
@@ -44,3 +49,4 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+

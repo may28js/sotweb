@@ -1,13 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
-import { ShoppingCart, Search, Filter, ChevronRight, Plus, Minus, Trash2, X, Loader2, User as UserIcon, Check, AlertCircle } from 'lucide-react';
+import { ShoppingCart, Search, Filter, ChevronRight, User as UserIcon, X, Trash2, Plus, Minus } from 'lucide-react';
 import type { ShopItem, User, Character } from '../types';
-import { shopService, getImageUrl } from '../services/api';
+import { shopService, authService, getImageUrl } from '../services/api';
 import { RechargeModal } from './RechargeModal';
-
-// --- Types ---
-interface CartItem extends ShopItem {
-  quantity: number;
-}
+import { CheckoutModal } from './CheckoutModal';
+import { useCart } from '../context/CartContext';
 
 // --- Components ---
 
@@ -61,280 +58,91 @@ const ShopCard = ({ item, onAddToCart }: { item: ShopItem, onAddToCart: (item: S
   </div>
 );
 
-const CheckoutModal = ({ 
-    isOpen, 
-    onClose, 
-    characters, 
-    selectedCharacter, 
-    onSelectCharacter, 
-    onConfirm, 
-    step, 
-    message,
-    totalPrice
-}: {
-    isOpen: boolean;
-    onClose: () => void;
-    characters: Character[];
-    selectedCharacter: string;
-    onSelectCharacter: (name: string) => void;
-    onConfirm: () => void;
-    step: 'select' | 'processing' | 'success' | 'error';
-    message: string;
-    totalPrice: number;
-}) => {
-    if (!isOpen) return null;
+interface StorePageProps {
+    user: User | null;
+    setUser?: (user: User | null) => void;
+}
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-[400px] bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col">
-                {/* Header */}
-                <div className="h-14 flex items-center justify-between px-6 border-b border-white/5 bg-white/5">
-                    <span className="font-bold text-lg text-white">
-                        {step === 'success' ? '购买成功' : '确认购买'}
-                    </span>
-                    {step !== 'processing' && (
-                        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-                            <X size={20} />
-                        </button>
-                    )}
-                </div>
-
-                {/* Body */}
-                <div className="p-6">
-                    {step === 'select' && (
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between bg-black/20 p-3 rounded border border-white/5">
-                                <span className="text-gray-400 text-sm">总计金额:</span>
-                                <span className="text-yellow-500 font-bold flex items-center gap-1">
-                                    {totalPrice}
-                                    <img src="/images/currency-red.png" alt="C" className="w-4 h-4 object-contain" />
-                                </span>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs text-gray-400 font-bold uppercase tracking-wider block">
-                                    选择接收角色
-                                </label>
-                                {characters.length > 0 ? (
-                                    <div className="space-y-1 max-h-[200px] overflow-y-auto custom-scrollbar pr-1">
-                                        {characters.map(char => (
-                                            <button
-                                                key={char.name}
-                                                onClick={() => onSelectCharacter(char.name)}
-                                                className={`w-full flex items-center justify-between p-3 rounded border transition-all ${
-                                                    selectedCharacter === char.name
-                                                        ? 'bg-yellow-600/20 border-yellow-500/50 text-white'
-                                                        : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded bg-black/40 flex items-center justify-center">
-                                                        <UserIcon size={16} />
-                                                    </div>
-                                                    <div className="flex flex-col items-start">
-                                                        <span className="font-bold text-sm">{char.name}</span>
-                                                        <span className="text-[10px] opacity-60">Level {char.level}</span>
-                                                    </div>
-                                                </div>
-                                                {selectedCharacter === char.name && <Check size={16} className="text-yellow-500" />}
-                                            </button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-4 text-red-400 text-sm bg-red-500/10 rounded border border-red-500/20">
-                                        未找到角色，请先在游戏中创建角色。
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {step === 'processing' && (
-                        <div className="flex flex-col items-center justify-center py-8 gap-4">
-                            <Loader2 className="animate-spin text-yellow-500" size={48} />
-                            <span className="text-gray-300 text-sm animate-pulse">正在处理交易...</span>
-                        </div>
-                    )}
-
-                    {step === 'success' && (
-                        <div className="flex flex-col items-center justify-center py-6 gap-4 text-center">
-                            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center text-green-500 mb-2">
-                                <Check size={32} />
-                            </div>
-                            <h3 className="text-white font-bold text-lg">购买成功!</h3>
-                            <p className="text-gray-400 text-sm">{message}</p>
-                        </div>
-                    )}
-
-                    {step === 'error' && (
-                        <div className="flex flex-col items-center justify-center py-6 gap-4 text-center">
-                            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 mb-2">
-                                <AlertCircle size={32} />
-                            </div>
-                            <h3 className="text-white font-bold text-lg">购买失败</h3>
-                            <p className="text-gray-400 text-sm">{message}</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Footer */}
-                {step !== 'processing' && (
-                    <div className="p-4 bg-black/20 border-t border-white/5 flex justify-end gap-3">
-                        {step === 'select' ? (
-                            <>
-                                <button 
-                                    onClick={onClose}
-                                    className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
-                                >
-                                    取消
-                                </button>
-                                <button 
-                                    onClick={onConfirm}
-                                    disabled={!selectedCharacter}
-                                    className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-lg shadow-lg shadow-yellow-900/20 transition-all active:scale-95 text-sm"
-                                >
-                                    确认支付
-                                </button>
-                            </>
-                        ) : (
-                            <button 
-                                onClick={onClose}
-                                className="w-full px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg transition-colors text-sm"
-                            >
-                                关闭
-                            </button>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-const CartSidebar = ({ 
+const StorePage = ({ 
+    user, 
+    setUser
+}: StorePageProps) => {
+  const { 
     cart, 
-    onUpdateQuantity, 
-    onRemove, 
-    onClose,
-    onCheckout,
-    total 
-}: { 
-    cart: CartItem[], 
-    onUpdateQuantity: (id: number, delta: number) => void,
-    onRemove: (id: number) => void,
-    onClose: () => void,
-    onCheckout: () => void,
-    total: number
-}) => {
-    return (
-        <div className="sticky top-0 z-30 animate-in slide-in-from-left duration-300">
-            <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 shadow-2xl backdrop-blur-md">
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
-                    <h3 className="text-white font-bold uppercase tracking-wider flex items-center gap-2 text-sm">
-                        <ShoppingCart size={16} className="text-yellow-500" />
-                        购物车 ({cart.reduce((a, b) => a + b.quantity, 0)})
-                    </h3>
-                    <button 
-                        onClick={onClose} 
-                        className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-white/5"
-                        title="关闭购物车"
-                    >
-                        <X size={16} />
-                    </button>
-                </div>
+    isCartOpen, 
+    setIsCartOpen, 
+    addToCart, 
+    removeFromCart, 
+    updateQuantity, 
+    clearCart,
+    cartTotal: total 
+  } = useCart();
 
-                {/* Cart Items List */}
-                <div className={`space-y-3 mb-4 overflow-y-auto pr-1 custom-scrollbar ${cart.length > 5 ? 'max-h-[400px]' : ''}`}>
-                    {cart.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500 text-xs">
-                            购物车是空的
-                        </div>
-                    ) : (
-                        cart.map((item) => (
-                            <div key={item.id} className="bg-black/20 p-2.5 rounded border border-white/5 group">
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className="text-xs text-gray-200 font-medium line-clamp-1">{item.name}</span>
-                                    <button 
-                                        onClick={() => onRemove(item.id)}
-                                        className="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
-                                </div>
-                                
-                                <div className="flex justify-between items-center">
-                                    <div className="text-xs text-yellow-500 font-mono font-bold flex items-center gap-1">
-                                        {item.price * item.quantity}
-                                        <img src="/images/currency-red.png" alt="C" className="w-3 h-3 object-contain" />
-                                    </div>
-                                    
-                                    {!item.isUnique ? (
-                                        <div className="flex items-center space-x-1 bg-white/5 rounded px-1 border border-white/5">
-                                            <button 
-                                                onClick={() => onUpdateQuantity(item.id, -1)}
-                                                className="text-gray-400 hover:text-white p-0.5"
-                                            >
-                                                <Minus size={10} />
-                                            </button>
-                                            <span className="text-[10px] text-white w-4 text-center font-mono">{item.quantity}</span>
-                                            <button 
-                                                onClick={() => onUpdateQuantity(item.id, 1)}
-                                                className="text-gray-400 hover:text-white p-0.5"
-                                            >
-                                                <Plus size={10} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <span className="text-[10px] text-gray-500 uppercase border border-gray-700 px-1.5 py-0.5 rounded">唯一</span>
-                                    )}
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                {cart.length > 0 && (
-                    <div className="pt-3 border-t border-white/10 space-y-3">
-                        <div className="flex justify-between items-center text-sm font-bold">
-                            <span className="text-gray-400 text-xs">总计:</span>
-                            <span className="text-yellow-500 text-base flex items-center gap-1">
-                                {total}
-                                <img src="/images/currency-red.png" alt="C" className="w-4 h-4 object-contain" />
-                            </span>
-                        </div>
-
-                        <button 
-                            className="w-full py-2 bg-yellow-600 hover:bg-yellow-500 text-black text-xs font-bold uppercase tracking-wider transition-colors shadow-lg shadow-yellow-900/20 rounded-md"
-                            onClick={onCheckout}
-                        >
-                            去结算
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-const StorePage = ({ user }: { user: User | null }) => {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Cart State
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  // Recharge Modal
+  const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
 
   // Checkout State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [selectedCharacter, setSelectedCharacter] = useState<string>('');
   const [checkoutStep, setCheckoutStep] = useState<'select' | 'processing' | 'success' | 'error'>('select');
   const [checkoutMessage, setCheckoutMessage] = useState('');
-  
-  // Recharge Modal
-  const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [selectedCharacter, setSelectedCharacter] = useState('');
+
+  const handleCheckout = async () => {
+    if (!user) return;
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+    setCheckoutStep('select');
+    setCheckoutMessage('');
+    setSelectedCharacter('');
+    
+    try {
+        const chars = await shopService.getMyCharacters(token);
+        setCharacters(chars);
+    } catch (e) {
+        console.error("Failed to fetch characters", e);
+        setCharacters([]);
+    }
+  };
+
+  const handleConfirmCheckout = async () => {
+    if (!user || !selectedCharacter) return;
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    
+    setCheckoutStep('processing');
+    try {
+        const items = cart.map(item => ({
+            itemId: item.id,
+            quantity: item.quantity
+        }));
+
+        const result = await shopService.purchaseBulk(token, items, selectedCharacter);
+        
+        if (result) {
+            setCheckoutStep('success');
+            setCheckoutMessage(result.message || `成功购买 ${items.length} 个物品。`);
+            // Clear cart
+            clearCart();
+            // Update user points if setUser is provided
+            if (setUser) {
+                const me = await authService.getMe(token);
+                setUser(me);
+            }
+        }
+    } catch (e: any) {
+        setCheckoutStep('error');
+        setCheckoutMessage(e.message || '购买过程中发生错误。');
+    }
+  };
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -363,94 +171,30 @@ const StorePage = ({ user }: { user: User | null }) => {
     return ['全部', ...Array.from(new Set(items.map(item => item.category)))];
   }, [items]);
 
-  // Cart Logic
-  const addToCart = (item: ShopItem) => {
-    setCart(prev => {
-        const existing = prev.find(i => i.id === item.id);
-        if (existing) {
-            if (item.isUnique) return prev; // Cannot add more of unique item
-            return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
-        }
-        return [...prev, { ...item, quantity: 1 }];
-    });
-    setIsCartOpen(true);
-  };
-
-  const removeFromCart = (id: number) => {
-    setCart(prev => prev.filter(i => i.id !== id));
-    if (cart.length <= 1) setIsCartOpen(false); 
-  };
-
-  const updateQuantity = (id: number, delta: number) => {
-    setCart(prev => prev.map(i => {
-        if (i.id === id) {
-            const newQ = i.quantity + delta;
-            return newQ > 0 ? { ...i, quantity: newQ } : i;
-        }
-        return i;
-    }));
-  };
-
-  const cartTotal = useMemo(() => cart.reduce((acc, item) => acc + (item.price * item.quantity), 0), [cart]);
-
-  // Checkout Logic
-  const handleCheckout = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-        alert("请先登录");
-        return;
-    }
-    
-    setCheckoutStep('select');
-    setCheckoutMessage('');
-    setIsCheckoutOpen(true);
-    
-    try {
-        const chars = await shopService.getMyCharacters(token);
-        setCharacters(chars);
-        if (chars.length > 0) setSelectedCharacter(chars[0].name);
-    } catch (e) {
-        console.error(e);
-        setCheckoutStep('error');
-        setCheckoutMessage("获取角色列表失败，请稍后重试。");
-    }
-  };
-
-  const confirmPurchase = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token || !selectedCharacter) return;
-    
-    setCheckoutStep('processing');
-    
-    try {
-        const itemsToBuy = cart.map(i => ({ itemId: i.id, quantity: i.quantity }));
-        const result = await shopService.purchaseBulk(token, itemsToBuy, selectedCharacter);
-        
-        setCheckoutStep('success');
-        setCheckoutMessage(result.message || "购买成功！物品将发送到您的邮箱。");
-        setCart([]); // Clear cart
-    } catch (e: any) {
-        setCheckoutStep('error');
-        setCheckoutMessage(e.message || "购买失败，请检查余额或联系客服。");
-    }
-  };
-
-  const closeCheckout = () => {
-      setIsCheckoutOpen(false);
-      // Reset if closed after success
-      if (checkoutStep === 'success') {
-          setIsCartOpen(false);
-      }
-  };
-
   if (isLoading) {
       return (
           <div className="flex flex-col items-center justify-center h-full">
               <div className="relative z-10 flex flex-col items-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mb-8"></div>
-                </div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mb-4"></div>
+              </div>
           </div>
       );
+  }
+
+  // Access Control
+  if (!user) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8 animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 shadow-2xl">
+                <UserIcon size={40} className="text-gray-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-3">需要登录</h2>
+            <p className="text-gray-400 mb-8 max-w-md leading-relaxed">
+                请先登录账号以访问商店。<br/>
+                登录后，您可以购买物品、管理购物车并查看交易历史。
+            </p>
+        </div>
+    );
   }
 
   return (
@@ -461,14 +205,14 @@ const StorePage = ({ user }: { user: User | null }) => {
         />
         <CheckoutModal 
             isOpen={isCheckoutOpen}
-            onClose={closeCheckout}
+            onClose={() => setIsCheckoutOpen(false)}
             characters={characters}
             selectedCharacter={selectedCharacter}
             onSelectCharacter={setSelectedCharacter}
-            onConfirm={confirmPurchase}
+            onConfirm={handleConfirmCheckout}
             step={checkoutStep}
             message={checkoutMessage}
-            totalPrice={cartTotal}
+            totalPrice={total}
         />
 
         {/* Header */}
@@ -498,25 +242,12 @@ const StorePage = ({ user }: { user: User | null }) => {
                         充值
                     </button>
                 </div>
-
-                {/* Cart Toggle Button (Visible when sidebar is not showing cart) */}
-                {!isCartOpen && cart.length > 0 && (
-                     <button 
-                        onClick={() => setIsCartOpen(true)}
-                        className="relative p-2 rounded-full hover:bg-white/10 transition-colors"
-                     >
-                         <ShoppingCart size={20} className="text-gray-300" />
-                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-[#1a1a1a]">
-                             {cart.reduce((a, b) => a + b.quantity, 0)}
-                         </span>
-                     </button>
-                )}
             </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex flex-1 gap-8 overflow-hidden min-h-0">
-            {/* Left Sidebar (Filters or Cart) */}
+        <div className="flex flex-1 gap-8 overflow-hidden min-h-0 relative">
+            {/* Left Sidebar (Filters) */}
             <div className="w-64 flex-shrink-0 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2">
                 {/* Search is always visible */}
                 <div className="relative w-full group">
@@ -532,51 +263,124 @@ const StorePage = ({ user }: { user: User | null }) => {
                     />
                 </div>
 
-                {/* Conditional Sidebar Content */}
-                {isCartOpen ? (
-                    <CartSidebar 
-                        cart={cart}
-                        onUpdateQuantity={updateQuantity}
-                        onRemove={removeFromCart}
-                        onClose={() => setIsCartOpen(false)}
-                        onCheckout={handleCheckout}
-                        total={cartTotal}
-                    />
-                ) : (
-                    <div className="space-y-6 animate-in slide-in-from-left duration-300">
-                        {/* Categories */}
-                        <div className="bg-[#1a1a1a] border border-white/10 rounded-lg p-5 shadow-lg">
-                            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <Filter className="h-4 w-4 text-yellow-500" />
-                                商品分类
-                            </h3>
-                            <div className="space-y-1">
-                                {categories.map(cat => (
-                                <button
-                                    key={cat}
-                                    onClick={() => setActiveCategory(cat)}
-                                    className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium transition-all flex items-center justify-between group ${
-                                    activeCategory === cat 
-                                    ? 'bg-yellow-600/20 text-yellow-500 border border-yellow-600/30' 
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                                    }`}
+                {!isCartOpen && (
+                <div className="space-y-6 animate-in slide-in-from-left duration-300">
+                    {/* Categories */}
+                    <div className="bg-[#1a1a1a] border border-white/10 rounded-lg p-5 shadow-lg">
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <Filter className="h-4 w-4 text-yellow-500" />
+                            商品分类
+                        </h3>
+                        <div className="space-y-1">
+                            {categories.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium transition-all flex items-center justify-between group ${
+                                activeCategory === cat 
+                                ? 'bg-yellow-600/20 text-yellow-500 border border-yellow-600/30' 
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                }`}
+                            >
+                                {cat}
+                                {activeCategory === cat && <ChevronRight className="h-3 w-3" />}
+                            </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Promo Box */}
+                    <div className="bg-gradient-to-br from-yellow-900/20 to-[#212121] border border-yellow-500/20 rounded-lg p-5 shadow-lg">
+                        <h3 className="text-yellow-500 font-bold mb-2 text-sm">需要帮助?</h3>
+                        <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+                            购买过程中遇到问题？请联系我们的支持团队获取帮助。
+                        </p>
+                        <button className="text-xs font-bold text-white underline hover:text-yellow-500">
+                            联系客服
+                        </button>
+                    </div>
+                </div>
+                )}
+
+                {/* Shopping Cart - Embedded in Sidebar */}
+                {isCartOpen && (
+                    <div className="sticky top-0 z-30 animate-in slide-in-from-left duration-300">
+                        <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 shadow-2xl backdrop-blur-md">
+                            <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                                <h3 className="text-white font-bold uppercase tracking-wider flex items-center gap-2 text-sm">
+                                    <ShoppingCart size={16} className="text-yellow-500" />
+                                    购物车 ({cart.reduce((a, b) => a + b.quantity, 0)})
+                                </h3>
+                                <button 
+                                    onClick={() => setIsCartOpen(false)} 
+                                    className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-white/5"
+                                    aria-label="关闭购物车"
                                 >
-                                    {cat}
-                                    {activeCategory === cat && <ChevronRight className="h-3 w-3" />}
+                                    <X size={16} />
                                 </button>
+                            </div>
+
+                            {/* Cart Items List */}
+                            <div className={`space-y-3 mb-4 overflow-y-auto pr-1 custom-scrollbar ${cart.length > 5 ? 'max-h-[300px]' : ''}`}>
+                                {cart.map((item) => (
+                                    <div key={item.id} className="bg-black/20 p-2.5 rounded border border-white/5 group">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="text-xs text-gray-200 font-medium line-clamp-1">{item.name}</span>
+                                            <button 
+                                                onClick={() => removeFromCart(item.id)}
+                                                className="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center">
+                                            <div className="text-xs text-yellow-500 font-mono font-bold flex items-center gap-1">
+                                                {item.price * item.quantity}
+                                                <img src="/images/currency-red.png" alt="C" className="w-3 h-3 object-contain" />
+                                            </div>
+                                            
+                                            {!item.isUnique ? (
+                                                <div className="flex items-center space-x-1 bg-white/5 rounded px-1 border border-white/5">
+                                                    <button 
+                                                        onClick={() => updateQuantity(item.id, -1)}
+                                                        className="text-gray-400 hover:text-white p-0.5"
+                                                    >
+                                                        <Minus size={10} />
+                                                    </button>
+                                                    <span className="text-[10px] text-white w-3 text-center font-mono">{item.quantity}</span>
+                                                    <button 
+                                                        onClick={() => updateQuantity(item.id, 1)}
+                                                        className="text-gray-400 hover:text-white p-0.5"
+                                                    >
+                                                        <Plus size={10} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-[10px] text-gray-500 uppercase border border-gray-700 px-1.5 py-0.5 rounded">唯一</span>
+                                            )}
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
-                        </div>
 
-                        {/* Promo Box */}
-                        <div className="bg-gradient-to-br from-yellow-900/20 to-[#212121] border border-yellow-500/20 rounded-lg p-5 shadow-lg">
-                            <h3 className="text-yellow-500 font-bold mb-2 text-sm">需要帮助?</h3>
-                            <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-                                购买过程中遇到问题？请联系我们的支持团队获取帮助。
-                            </p>
-                            <button className="text-xs font-bold text-white underline hover:text-yellow-500">
-                                联系客服
-                            </button>
+                            <div className="pt-3 border-t border-white/10 space-y-3">
+                                <div className="flex justify-between items-center text-sm font-bold">
+                                    <span className="text-gray-400 text-xs">总计:</span>
+                                    <span className="text-yellow-500 text-base flex items-center gap-1">
+                                        {total}
+                                        <img src="/images/currency-red.png" alt="C" className="w-4 h-4 object-contain" />
+                                    </span>
+                                </div>
+
+                                <button 
+                                    onClick={handleCheckout}
+                                    className="w-full py-2.5 bg-yellow-600 hover:bg-yellow-500 text-black text-xs font-bold uppercase tracking-wider transition-colors shadow-lg shadow-yellow-900/20 rounded-md flex items-center justify-center gap-2"
+                                >
+                                    <ShoppingCart size={14} />
+                                    去结算
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -600,23 +404,9 @@ const StorePage = ({ user }: { user: User | null }) => {
                 )}
             </div>
         </div>
-
-        {/* Mobile Cart Trigger (Visible if cart has items but sidebar is closed) */}
-        {!isCartOpen && cart.length > 0 && (
-            <div className="absolute bottom-6 right-6 z-50 lg:hidden">
-                <button 
-                    onClick={() => setIsCartOpen(true)}
-                    className="bg-yellow-600 text-black p-4 rounded-full shadow-2xl border-2 border-white/10 relative hover:scale-110 transition-transform"
-                >
-                    <ShoppingCart size={24} />
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border border-[#1a1a1a]">
-                        {cart.reduce((a, b) => a + b.quantity, 0)}
-                    </span>
-                </button>
-            </div>
-        )}
     </div>
   );
 };
+
 
 export default StorePage;

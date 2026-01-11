@@ -67,6 +67,36 @@ const TopNavLink = ({ label, active, onClick }: { label: string, active: boolean
   </button>
 );
 
+import { CartProvider, useCart } from './context/CartContext';
+
+const CartIndicator = ({ activeTab, setActiveTab }: { activeTab: Tab, setActiveTab: (tab: Tab) => void }) => {
+  const { cart, setIsCartOpen, isCartOpen } = useCart();
+  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (cartItemCount === 0) return null;
+
+  return (
+    <button 
+      onClick={(e) => {
+        e.preventDefault();
+        if (activeTab === 'store') {
+          setIsCartOpen(!isCartOpen);
+        } else {
+          setActiveTab('store');
+          setIsCartOpen(true);
+        }
+      }}
+      className="mr-2 relative text-gray-300 hover:text-white transition-colors group animate-in fade-in zoom-in duration-200"
+      title="购物车"
+    >
+      <ShoppingCart className="w-5 h-5" />
+      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-[#1a1a1a]">
+        {cartItemCount}
+      </span>
+    </button>
+  );
+};
+
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('game');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -88,6 +118,12 @@ function App() {
   // Client Discovery State
   const [discoveredClients, setDiscoveredClients] = useState<string[]>([]);
   const [showClientSelector, setShowClientSelector] = useState(false);
+  
+  // Update State
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateVersion, setUpdateVersion] = useState('');
+  const [isUpdatingLauncher, setIsUpdatingLauncher] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0);
 
   // const [launcherConfig, setLauncherConfig] = useState<LauncherConfig | null>(null); // Unused
 
@@ -181,6 +217,13 @@ function App() {
                 }
             } else if (message && message.type === 'error') {
                 console.error("IPC Error:", message.payload);
+            } else if (message && message.type === 'launcher_update_available') {
+                console.log("Launcher update available:", message.payload);
+                setUpdateVersion(message.payload.version);
+                setShowUpdateModal(true);
+            } else if (message && message.type === 'launcher_update_progress') {
+                setIsUpdatingLauncher(true);
+                setUpdateProgress(message.payload.progress);
             } else if (message && message.type === 'discovered_clients') {
                 console.log("[Frontend] Discovered Clients Message:", message.payload);
                 
@@ -373,9 +416,12 @@ function App() {
       case 'social':
       return <SocialPage />;
     case 'store':
-      return <StorePage user={user} />;
-    case 'news':
-      return <NewsPage />;
+        return <StorePage 
+          user={user}
+          setUser={setUser}
+        />;
+      case 'news':
+        return <NewsPage />;
     case 'dev':
         return <DevPage />;
       case 'plugins':
@@ -404,6 +450,7 @@ function App() {
   }
 
   return (
+    <CartProvider user={user}>
     <div className="flex h-screen w-screen overflow-hidden text-white font-sans select-none border border-white/5 rounded-lg relative">
       
       {/* Global Background Image */}
@@ -411,6 +458,7 @@ function App() {
           <img src="/images/general-page-bg.avif" className="w-full h-full object-cover" alt="Background" />
       </div>
 
+      {/* Modals & Overlays */}
       {showLoginModal && (
         <LoginPage 
           onLogin={() => {
@@ -441,6 +489,61 @@ function App() {
           onDrag={handleDrag}
           onClose={() => setShowLoginModal(false)}
         />
+      )}
+
+      {/* Update Modal */}
+      {showUpdateModal && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md">
+            <div className="w-[400px] bg-[#1a1a1a] border border-amber-500/30 rounded-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Rocket className="text-amber-500" />
+                    发现新版本
+                </h2>
+                
+                {!isUpdatingLauncher ? (
+                    <>
+                        <p className="text-gray-300 mb-6 text-sm leading-relaxed">
+                            启动器有新版本 <span className="text-amber-400 font-mono">{updateVersion}</span> 可用。<br/>
+                            建议立即更新以获得最佳体验和最新功能。
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button 
+                                onClick={() => setShowUpdateModal(false)}
+                                className="px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
+                            >
+                                暂不更新
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setIsUpdatingLauncher(true);
+                                    // @ts-ignore
+                                    if (window.chrome?.webview) {
+                                        // @ts-ignore
+                                        window.chrome.webview.postMessage({ type: 'perform_launcher_update' });
+                                    }
+                                }}
+                                className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors text-sm shadow-lg shadow-amber-500/20"
+                            >
+                                立即更新
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex flex-col gap-3">
+                        <div className="flex justify-between text-xs text-gray-400">
+                            <span>正在下载更新...</span>
+                            <span className="text-amber-500">{updateProgress.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-amber-500 transition-all duration-300 ease-out"
+                                style={{ width: `${updateProgress}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
       )}
 
       {/* Client Selector Modal */}
@@ -565,6 +668,7 @@ function App() {
             className="flex items-center gap-6 pr-24" // Added padding-right to avoid window control overlap
             onMouseDown={(e) => e.stopPropagation()}
           >
+            <CartIndicator activeTab={activeTab} setActiveTab={setActiveTab} />
             {isLoggedIn ? (
               /* Integrated Profile */
               <div className="relative group/profile py-2">
@@ -723,7 +827,8 @@ function App() {
           </div>
         </footer>
       </div>
-    </div>
+      </div>
+    </CartProvider>
   );
 }
 

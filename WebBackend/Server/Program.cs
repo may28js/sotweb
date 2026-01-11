@@ -10,6 +10,10 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddTransient<IEmailService, SmtpEmailService>();
+builder.Services.AddMemoryCache(); // Add Memory Cache
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -200,6 +204,42 @@ using (var scope = app.Services.CreateScope())
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("[SYSTEM] Initial News Data Seeded Successfully.");
         Console.ResetColor();
+    }
+
+    // FIX: Clean up external image links (netease, etc.)
+    var newsToFix = dbContext.News.AsEnumerable().Where(n => (n.Thumbnail != null && (n.Thumbnail.Contains("netease") || n.Thumbnail.StartsWith("http"))) || (n.Content != null && (n.Content.Contains("netease") || n.Content.Contains("http")))).ToList();
+    if (newsToFix.Any())
+    {
+        Console.WriteLine($"[SYSTEM] Found {newsToFix.Count} news items with external links. Fixing...");
+        foreach (var item in newsToFix)
+        {
+            bool modified = false;
+            if (item.Thumbnail != null && (item.Thumbnail.Contains("netease") || item.Thumbnail.StartsWith("http")))
+            {
+                item.Thumbnail = "/demo-assets/news/24.jpeg";
+                modified = true;
+            }
+            
+            if (item.Content != null)
+            {
+                 string pattern = "src=\"https?://[^\"]*(netease|163\\.com|battle\\.net|blizzard|akamaihd)[^\"]*\"";
+                 string replacement = "src=\"/demo-assets/news/24.jpeg\"";
+                 string newContent = System.Text.RegularExpressions.Regex.Replace(item.Content, pattern, replacement);
+                 
+                 if (newContent != item.Content)
+                 {
+                     item.Content = newContent;
+                     modified = true;
+                 }
+            }
+            
+            if (modified)
+            {
+                Console.WriteLine($"[SYSTEM] Fixed News ID {item.Id}");
+            }
+        }
+        dbContext.SaveChanges();
+        Console.WriteLine("[SYSTEM] External links cleanup completed.");
     }
 
     // Seed Initial Owner based on Configuration
