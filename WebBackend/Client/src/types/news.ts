@@ -4,6 +4,6 @@ export interface News {
   content: string;
   author: string;
   createdAt: string;
-  type: 'Update' | 'Event' | 'Maintenance' | 'General';
+  type: 'Update' | 'Event' | 'Maintenance' | 'General' | '更新' | '活动' | '维护' | '综合';
   thumbnail?: string;
 }
