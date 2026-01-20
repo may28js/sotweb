@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    image: sotcommunity-backend
+    container_name: storyoftime-community-backend
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=38.55.125.89;Port=3306;Database=storyoftime_community;Uid=sotwow;Pwd=sot123852;SslMode=None;
+      # JWT Configuration (Should match website if sharing token, or independent)
+      - Jwt__Key=this_is_a_very_secure_key_for_story_of_time_project_12345_and_it_is_now_long_enough_for_hmac_sha512
+      - Jwt__Issuer=StoryOfTimeServer
+      - Jwt__Audience=StoryOfTimeClient
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./uploads:/app/wwwroot/uploads
+    networks:
+      - sotweb_default
+
+networks:
+  sotweb_default:
+    external: true

@@ -45,6 +45,7 @@ namespace StoryOfTime.Server.Controllers
                 var subFolder = "news";
                 if (type == "store") subFolder = "store";
                 else if (type == "avatar") subFolder = "avatars";
+                else if (type == "community") subFolder = "community";
 
                 var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
                 

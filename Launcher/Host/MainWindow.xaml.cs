@@ -66,6 +66,7 @@ namespace StoryOfTimeLauncher
             InitializeAsync();
             this.Loaded += MainWindow_Loaded;
             this.SizeChanged += MainWindow_SizeChanged;
+            this.DpiChanged += MainWindow_DpiChanged;
         }
 
         private void MainWindow_Loaded(object? sender, RoutedEventArgs e)
@@ -78,9 +79,23 @@ namespace StoryOfTimeLauncher
             SetRoundedRegion();
         }
 
+        private void MainWindow_DpiChanged(object sender, System.Windows.DpiChangedEventArgs e)
+        {
+            SetRoundedRegion();
+        }
+
         private void SetRoundedRegion()
         {
-            IntPtr hRgn = CreateRoundRectRgn(0, 0, (int)this.ActualWidth + 1, (int)this.ActualHeight + 1, 16, 16);
+            DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi(this);
+            double dpiScaleX = dpi.DpiScaleX;
+            double dpiScaleY = dpi.DpiScaleY;
+
+            int width = (int)(this.ActualWidth * dpiScaleX) + 1;
+            int height = (int)(this.ActualHeight * dpiScaleY) + 1;
+            int cornerRadiusX = (int)(16 * dpiScaleX);
+            int cornerRadiusY = (int)(16 * dpiScaleY);
+
+            IntPtr hRgn = CreateRoundRectRgn(0, 0, width, height, cornerRadiusX, cornerRadiusY);
             SetWindowRgn(new WindowInteropHelper(this).Handle, hRgn, true);
         }
 
@@ -100,7 +115,7 @@ namespace StoryOfTimeLauncher
                 webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
 
                 // 2. Virtual Host for Embedded Resources
-                webView.CoreWebView2.AddWebResourceRequestedFilter("https://storyoftime.local/*", CoreWebView2WebResourceContext.All);
+                webView.CoreWebView2.AddWebResourceRequestedFilter("http://storyoftime.local/*", CoreWebView2WebResourceContext.All);
                 webView.CoreWebView2.WebResourceRequested += CoreWebView2_WebResourceRequested;
 
                 // Inject diagnostics
@@ -113,16 +128,16 @@ namespace StoryOfTimeLauncher
                     });
                 ");
 
-                webView.CoreWebView2.Navigate("https://storyoftime.local/index.html");
+                webView.CoreWebView2.Navigate("http://storyoftime.local/index.html");
                 
                 // Start the State Machine
                 // Active Handshake: Don't wait for app_ready, send status proactively after navigation
                 await Task.Delay(500); // Wait for navigation to start
 
                 // Priority #0: Launcher Auto-Update
-                UpdateOverlay.Visibility = Visibility.Visible;
-                UpdateStatusText.Text = "正在检查启动器更新...";
-                webView.Visibility = Visibility.Collapsed; // Hide WebView to ensure Overlay is visible
+                UpdateOverlay.Visibility = Visibility.Collapsed;
+                // UpdateStatusText.Text = "正在检查启动器更新...";
+                webView.Visibility = Visibility.Visible; 
 
                 bool hasUpdate = false;
                 try 
@@ -136,15 +151,18 @@ namespace StoryOfTimeLauncher
 
                 if (hasUpdate)
                 {
+                    // Hide WebView to ensure Overlay is visible (prevent Airspace issues)
+                    webView.Visibility = Visibility.Collapsed;
+                    
                     UpdateStatusText.Text = $"发现新版本: {_updateService.LatestVersion}";
                     UpdateConfirmButton.Visibility = Visibility.Visible;
+                    UpdateOverlay.Visibility = Visibility.Visible;
                     // Stop here, wait for user interaction
                     return;
                 }
                 
                 // No update or check failed, proceed
                 UpdateOverlay.Visibility = Visibility.Collapsed;
-                webView.Visibility = Visibility.Visible;
                 
                 // Phase 1: Determine Initial State
                 await DetermineInitialStateAsync();
@@ -408,7 +426,15 @@ namespace StoryOfTimeLauncher
                         }
                         break;
                     case "main_action":
-                        OnMainButtonClick();
+                        string? username = null;
+                        string? password = null;
+                        if (message.Payload is JsonElement mainPayload && 
+                            mainPayload.ValueKind == JsonValueKind.Object)
+                        {
+                            if (mainPayload.TryGetProperty("username", out var userProp)) username = userProp.GetString();
+                            if (mainPayload.TryGetProperty("password", out var passProp)) password = passProp.GetString();
+                        }
+                        OnMainButtonClick(username, password);
                         break;
                     case "import_game":
                         if (message.Payload is JsonElement payload && payload.TryGetProperty("path", out var pathProp))
@@ -522,7 +548,7 @@ namespace StoryOfTimeLauncher
             }
         }
 
-        private void OnMainButtonClick()
+        private void OnMainButtonClick(string? username = null, string? password = null)
         {
             switch (_currentState)
             {
@@ -535,7 +561,7 @@ namespace StoryOfTimeLauncher
                     break;
 
                 case LauncherState.Ready:
-                    StartGame();
+                    StartGame(username, password);
                     break;
                 
                 case LauncherState.Error:
@@ -784,7 +810,7 @@ namespace StoryOfTimeLauncher
             });
         }
 
-        private void StartGame()
+        private void StartGame(string? username = null, string? password = null)
         {
             // Direct to Playing state to avoid progress bar flash
             SetState(LauncherState.Playing, "正在启动...");
@@ -793,6 +819,9 @@ namespace StoryOfTimeLauncher
             try
             {
                 _gameService.UpdateRealmlist(path, _currentRealmlist);
+                
+                // _gameService.UpdateConfig(path, username, password); // Removed auto-login logic
+
                 _gameService.LaunchGame(path);
                 
                 SetState(LauncherState.Playing, "游戏中...");

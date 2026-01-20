@@ -310,6 +310,7 @@ namespace StoryOfTime.Server.Controllers
 
         [HttpGet("me")]
         [Authorize]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<ActionResult<object>> GetMe()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -318,12 +319,23 @@ namespace StoryOfTime.Server.Controllers
                 return Unauthorized();
             }
 
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users
+                .Include(u => u.CommunityRoles)
+                .ThenInclude(ur => ur.CommunityRole)
+                .FirstOrDefaultAsync(u => u.Id == userId);
             
             if (user == null)
             {
                 return NotFound("User not found.");
             }
+
+            var allRoles = await _cache.GetOrCreateAsync("CommunityRoles", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+                return await _context.CommunityRoles.OrderByDescending(r => r.SortOrder).ToListAsync();
+            }) ?? new List<CommunityRole>();
+
+            string roleColor = GetUserRoleColor(user, allRoles);
 
             return Ok(new
             {
@@ -332,8 +344,28 @@ namespace StoryOfTime.Server.Controllers
                 user.Email,
                 user.Points,
                 user.AccessLevel,
-                user.AvatarUrl
+                user.AvatarUrl,
+                user.Nickname,
+                user.AboutMe,
+                user.PreferredStatus,
+                RoleColor = roleColor
             });
+        }
+
+        private string GetUserRoleColor(User user, List<CommunityRole> allRoles)
+        {
+            if (user == null) return "#ffffff";
+            
+            var userRoleIds = user.CommunityRoles?.Select(ur => ur.CommunityRoleId).ToList() ?? new List<int>();
+            
+            // Combine Explicit Roles and Implicit System Roles (based on AccessLevel)
+            var effectiveRoles = allRoles
+                .Where(r => userRoleIds.Contains(r.Id) || (r.AccessLevel.HasValue && r.AccessLevel == user.AccessLevel))
+                .OrderByDescending(r => r.SortOrder)
+                .ToList();
+
+            var topRole = effectiveRoles.FirstOrDefault();
+            return topRole?.Color ?? "#ffffff";
         }
 
         [HttpPost("change-password")]
@@ -377,7 +409,8 @@ namespace StoryOfTime.Server.Controllers
         {
             string role = user.AccessLevel switch
             {
-                3 => "Owner",
+                4 => "Owner",
+                3 => "Partner",
                 2 => "Admin",
                 1 => "Moderator",
                 _ => "User"

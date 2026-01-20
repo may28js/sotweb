@@ -50,10 +50,10 @@ const GamePage = () => {
     fetchData();
   }, []);
 
-  const maintenanceNews = news.find(item => item.tag === '维护（启动器）');
-  const activityNews = news.find(item => item.tag === '活动');
-  const generalNews = news.filter(item => item.tag === '新闻');
-  const launcherUpdates = news.filter(item => item.tag === '更新（启动器）');
+  const maintenanceNews = news.find(item => ['维护', '维护（启动器）'].includes(item.tag));
+  const activityNews = news.find(item => ['活动'].includes(item.tag));
+  const generalNews = news.filter(item => ['新闻', '综合'].includes(item.tag));
+  const launcherUpdates = news.filter(item => ['更新', '更新（启动器）'].includes(item.tag));
 
   if (loading) {
       return (

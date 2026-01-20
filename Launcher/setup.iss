@@ -1,5 +1,5 @@
-#define MyAppName "时光故事启动器"
-#define MyAppVersion "1.0.1"
+#define MyAppName "SotLauncher"
+#define MyAppVersion "1.0.4"
 #define MyAppPublisher "StoryOfTime"
 #define MyAppURL "https://shiguanggushi.xyz"
 #define MyAppExeName "SotLauncher.exe"
@@ -19,9 +19,9 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
 ; Remove the following line to run in administrative install mode (install for all users.)
-PrivilegesRequired=lowest
+; PrivilegesRequired=lowest
 OutputDir=Installer
-OutputBaseFilename=StoryOfTimeLauncher_Setup_v{#MyAppVersion}
+OutputBaseFilename=SotLauncher_v{#MyAppVersion}
 SetupIconFile=Host\sot.ico
 Compression=lzma
 SolidCompression=yes
@@ -29,8 +29,10 @@ WizardStyle=modern
 CloseApplications=yes
 RestartApplications=yes
 ; 美化配置
-WizardImageFile=图片\phoenix-alar.jpg
-WizardSmallImageFile=Host\sot.ico
+; WizardImageFile=图片\phoenix-alar.jpg
+; WizardSmallImageFile=Host\sot_small.bmp
+WizardImageFile=Host\wizard_large.bmp
+WizardSmallImageFile=Host\wizard_small.bmp
 
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "Languages\ChineseSimplified.isl"
@@ -39,8 +41,8 @@ Name: "chinesesimplified"; MessagesFile: "Languages\ChineseSimplified.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#SourcePath}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#SourcePath}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Source: "{#SourcePath}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourcePath}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\cs,\de,\es,\fr,\it,\ja,\ko,\pl,\pt-BR,\ru,\tr,\zh-Hant,*.pdb,*.xml"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -48,5 +50,9 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
+; 正常安装模式：在完成页显示“运行 SotLauncher”，默认勾选
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+
+; 静默安装模式：安装结束后直接运行
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait skipifnotsilent
 

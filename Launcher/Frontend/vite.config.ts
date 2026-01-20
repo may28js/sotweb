@@ -7,8 +7,26 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://shiguanggushi.xyz',
+        target: 'http://localhost:5201',
         changeOrigin: true,
+        secure: false,
+      },
+      '/community-api': {
+        target: 'http://localhost:5201',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        rewrite: (path) => path.replace(/^\/community-api/, '/api'),
+      },
+      '/uploads': {
+        target: 'http://localhost:5201',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/hubs': {
+        target: 'http://localhost:5201',
+        changeOrigin: true,
+        ws: true,
         secure: false,
       }
     }

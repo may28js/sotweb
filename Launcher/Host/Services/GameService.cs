@@ -80,6 +80,16 @@ namespace StoryOfTimeLauncher.Services
             }
         }
 
+        public void UpdateConfig(string installPath, string username, string? password = null)
+        {
+            // Auto-login logic removed as per user request
+        }
+
+        private void InjectAutoLoginScript(string installPath)
+        {
+             // Auto-login script injection removed
+        }
+
         public void LaunchGame(string installPath)
         {
             if (!IsGameInstalled(installPath))

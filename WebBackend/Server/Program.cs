@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StoryOfTime.Server.Data;
 using StoryOfTime.Server.Services;
+using StoryOfTime.Server.Hubs;
 using System.Text;
 
 using System.Text.Json.Serialization;
@@ -14,7 +15,10 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Services.AddTransient<IEmailService, SmtpEmailService>();
 builder.Services.AddMemoryCache(); // Add Memory Cache
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<StoryOfTime.Server.Filters.UpdateLastActiveFilter>();
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -31,7 +35,9 @@ builder.Services.Configure<GameServerOptions>(options =>
 });
 builder.Services.AddScoped<IGameServerService, AzerothCoreGameServerService>();
 builder.Services.AddHostedService<ServerMonitoringService>();
+builder.Services.AddSignalR();
 builder.Services.AddHttpClient<IOxapayService, OxapayService>();
+builder.Services.AddHttpClient<IOEmbedService, OEmbedService>();
 
 // Configure Request Size Limit (50MB)
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
@@ -52,10 +58,10 @@ builder.Services.AddCors(options =>
                         .AllowAnyMethod());
 });
 
-// Configure DB Context (SQLite for Local Dev, MySQL for Prod)
+// Configure DB Context
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString)); // TODO: Change to UseMySql for Prod
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_that_is_long_enough_12345";
@@ -71,6 +77,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "StoryOfTimeServer",
             ValidAudience = builder.Configuration["Jwt:Audience"] ?? "StoryOfTimeClient",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+        
+        // Allow JWT in Query String for SignalR
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    (path.StartsWithSegments("/hubs")))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -101,20 +123,20 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 // Auto-apply migrations
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.Migrate();
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the database.");
-    }
-}
+// using (var scope = app.Services.CreateScope())
+// {
+//     var services = scope.ServiceProvider;
+//     try
+//     {
+//         var context = services.GetRequiredService<ApplicationDbContext>();
+//         // context.Database.Migrate();
+//     }
+//     catch (Exception ex)
+//     {
+//         var logger = services.GetRequiredService<ILogger<Program>>();
+//         logger.LogError(ex, "An error occurred while migrating the database.");
+//     }
+// }
 
 // app.UseStaticFiles(); // Replaced by above
 
@@ -123,6 +145,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<CommunityHub>("/hubs/community");
 
 // TEMPORARY: Seed Admin User (Promote specific user 'm' or first user)
 using (var scope = app.Services.CreateScope())
@@ -132,8 +155,52 @@ using (var scope = app.Services.CreateScope())
     try 
     {
         Console.WriteLine("[SYSTEM] Applying Database Migrations...");
-        dbContext.Database.Migrate();
+        // dbContext.Database.Migrate();
+        // dbContext.Database.EnsureCreated();
+        
+        // Manual Migration for ChannelPermissionOverrides (if needed for SQLite dev)
+        // SKIPPED for MySQL Environment
+        
+        try 
+        {
+             // 1. ChannelPermissionOverrides
+            dbContext.Database.ExecuteSqlRaw(@"
+                CREATE TABLE IF NOT EXISTS ChannelPermissionOverrides (
+                    Id INT AUTO_INCREMENT PRIMARY KEY,
+                    ChannelId INT NOT NULL,
+                    RoleId INT NOT NULL,
+                    Allow BIGINT NOT NULL,
+                    Deny BIGINT NOT NULL,
+                    INDEX IX_ChannelPermissionOverrides_ChannelId (ChannelId),
+                    INDEX IX_ChannelPermissionOverrides_RoleId (RoleId),
+                    CONSTRAINT FK_ChannelPermissionOverrides_Channels_ChannelId FOREIGN KEY (ChannelId) REFERENCES Channels (Id) ON DELETE CASCADE,
+                    CONSTRAINT FK_ChannelPermissionOverrides_CommunityRoles_RoleId FOREIGN KEY (RoleId) REFERENCES CommunityRoles (Id) ON DELETE CASCADE
+                );
+            ");
+            
+            // 2. Add Embeds column to Posts if missing
+            // MySQL doesn't support IF NOT EXISTS for columns in all versions easily, so we use a safe approach or ignore error
+            try {
+                dbContext.Database.ExecuteSqlRaw("ALTER TABLE Posts ADD COLUMN Embeds LONGTEXT NULL;");
+            } catch { /* Ignore if exists */ }
+
+            // 3. Add Embeds column to Messages if missing
+            try {
+                dbContext.Database.ExecuteSqlRaw("ALTER TABLE Messages ADD COLUMN Embeds LONGTEXT NULL;");
+            } catch { /* Ignore if exists */ }
+
+            Console.WriteLine("[SYSTEM] Manual Schema Updates Applied.");
+        } 
+        catch (Exception ex) 
+        {
+            Console.WriteLine($"[SYSTEM] Manual Table Creation Warning: {ex.Message}");
+        }
+        
+
         Console.WriteLine("[SYSTEM] Database Migrations Applied Successfully.");
+
+        // Seed Community Data
+        StoryOfTime.Server.Data.DbSeeder.SeedCommunity(dbContext);
     }
     catch (Exception ex)
     {
@@ -266,6 +333,28 @@ using (var scope = app.Services.CreateScope())
         {
             Console.WriteLine($"[SYSTEM] Initial Owner '{initialOwnerName}' not found in database yet. Please register with this username.");
         }
+    }
+
+    // Seed Default Channels
+    if (!dbContext.Channels.Any())
+    {
+        Console.WriteLine("[SYSTEM] Seeding Default Channels...");
+        dbContext.Channels.AddRange(
+            new StoryOfTime.Server.Models.Channel { Name = "综合大厅", Description = "欢迎来到时之故事！", Type = "Chat", SortOrder = 1 },
+            new StoryOfTime.Server.Models.Channel { Name = "寻求组队", Description = "寻找你的冒险伙伴。", Type = "Chat", SortOrder = 2 },
+            new StoryOfTime.Server.Models.Channel { Name = "公会招募", Description = "寻找或建立你的公会。", Type = "Chat", SortOrder = 3 },
+            new StoryOfTime.Server.Models.Channel { Name = "游戏攻略", Description = "分享心得与技巧。", Type = "Forum", SortOrder = 4 },
+            new StoryOfTime.Server.Models.Channel { Name = "Bug反馈", Description = "帮助我们改进游戏。", Type = "Forum", SortOrder = 5 }
+        );
+        dbContext.SaveChanges();
+        Console.WriteLine("[SYSTEM] Default Channels Seeded.");
+    }
+    
+    // PERFORM MIGRATION CHECK
+    // Only run if MySQL DB is empty (users count == 0) and SQLite DB file exists
+    if (!dbContext.Users.Any() && System.IO.File.Exists("storyoftime.db"))
+    {
+        StoryOfTime.Server.Data.DataMigration.MigrateSqliteToMySql("Data Source=storyoftime.db", dbContext);
     }
 }
 

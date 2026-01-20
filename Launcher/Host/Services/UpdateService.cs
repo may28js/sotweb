@@ -34,22 +34,40 @@ namespace StoryOfTimeLauncher.Host.Services
                 if (config == null || string.IsNullOrEmpty(config.LatestVersion)) 
                     return false;
 
-                LatestVersion = config.LatestVersion;
-                DownloadUrl = config.DownloadUrl;
+                LatestVersion = config.LatestVersion?.Trim(); // Trim whitespace
+                DownloadUrl = config.DownloadUrl?.Trim(' ', '`', '\'', '"', '\r', '\n', '\t'); // Clean up URL thoroughly
 
                 var currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
                 
+                Console.WriteLine($"[UpdateService] Checking updates. Local: {currentVersion}, Remote: {LatestVersion}, URL: {DownloadUrl}");
+
+                if (string.IsNullOrEmpty(LatestVersion))
+                {
+                    Console.WriteLine("[UpdateService] Remote version is empty.");
+                    return false;
+                }
+
                 if (Version.TryParse(LatestVersion, out var remoteVersion))
                 {
                      // Debug: Force update if versions are equal for testing? No.
-                     return remoteVersion > currentVersion;
+                     if (remoteVersion > currentVersion)
+                     {
+                         Console.WriteLine("[UpdateService] Update found!");
+                         return true;
+                     }
+                }
+                else
+                {
+                     Console.WriteLine($"[UpdateService] Failed to parse remote version: {LatestVersion}");
                 }
                 
+                Console.WriteLine("[UpdateService] No update found.");
                 return false;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Update check failed: {ex.Message}");
+                Console.WriteLine($"[UpdateService] Update check failed: {ex.Message}");
+                // Debug.WriteLine($"Update check failed: {ex.Message}");
                 return false;
             }
         }
@@ -92,8 +110,11 @@ namespace StoryOfTimeLauncher.Host.Services
                 var psi = new ProcessStartInfo
                 {
                     FileName = tempPath,
-                    Arguments = "/SILENT /SP- /SUPPRESSMSGBOXES",
-                    UseShellExecute = true
+                    // Remove /SUPPRESSMSGBOXES to show errors if any
+                    // Use /SILENT to show progress but no wizard
+                    Arguments = "/SILENT /SP-",
+                    UseShellExecute = true,
+                    Verb = "runas" // Request admin privileges
                 };
                 
                 Process.Start(psi);

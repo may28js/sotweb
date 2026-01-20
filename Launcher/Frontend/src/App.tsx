@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LoginPage from './LoginPage';
 import { launcherService, authService } from './services/api';
+import { api, loadAppConfig, getAvatarUrl } from './lib/api';
 import type { User } from './types';
 import { 
   Play, 
@@ -21,6 +22,8 @@ import StorePage from './components/StorePage';
 import NewsPage from './components/NewsPage';
 import DevPage from './components/DevPage';
 import PluginsPage from './components/PluginsPage';
+
+import DiscoveryPopover from './components/DiscoveryPopover';
 
 // Host-aligned State Enum
 const LauncherState = {
@@ -45,13 +48,16 @@ interface LauncherStatus {
 type Tab = 'game' | 'social' | 'store' | 'news' | 'dev' | 'plugins';
 type GameStatus = 'not_installed' | 'installing' | 'updating' | 'ready' | 'playing' | 'checking' | 'error';
 
-const NavItem = ({ icon, active, onClick }: { icon: React.ReactNode, active: boolean, onClick: () => void }) => (
+const NavItem = ({ icon, active, onClick, badge }: { icon: React.ReactNode, active: boolean, onClick: () => void, badge?: boolean }) => (
   <button 
     onClick={onClick}
     className={`w-full p-3 transition-all duration-300 group relative flex justify-center items-center ${active ? 'bg-gradient-to-r from-amber-500/20 to-transparent text-amber-500' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
   >
     {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500" />}
     {icon}
+    {badge && (
+      <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#1a1a1a] animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+    )}
   </button>
 );
 
@@ -125,7 +131,31 @@ function App() {
   const [isUpdatingLauncher, setIsUpdatingLauncher] = useState(false);
   const [updateProgress, setUpdateProgress] = useState(0);
 
+  // Global Notification State
+  const [hasUnreadGlobal, setHasUnreadGlobal] = useState(false);
+
   // const [launcherConfig, setLauncherConfig] = useState<LauncherConfig | null>(null); // Unused
+
+  useEffect(() => {
+      // Poll for notification status
+      const checkNotifications = async () => {
+          if (!isLoggedIn) return;
+          try {
+              const res = await api.get('/community/notification-status');
+              if (res.data.hasUnreadGlobal) {
+                  setHasUnreadGlobal(true);
+              }
+          } catch (err) {
+              // ignore errors
+          }
+      };
+
+      if (isLoggedIn) {
+          checkNotifications();
+          const interval = setInterval(checkNotifications, 30000); // 30s
+          return () => clearInterval(interval);
+      }
+  }, [isLoggedIn]);
 
   useEffect(() => {
     // Check for existing token
@@ -147,6 +177,7 @@ function App() {
                 console.log("Session expired, logging out.");
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('auth_username');
+                localStorage.removeItem('auth_key');
                 setIsLoggedIn(false);
                 setUser(null);
             }
@@ -166,6 +197,11 @@ function App() {
         }
     };
     initConfig();
+  }, []);
+
+  // Load Config on Mount
+  useEffect(() => {
+    loadAppConfig();
   }, []);
 
   // IPC Handling
@@ -291,9 +327,19 @@ function App() {
    const handleGameAction = () => {
      // @ts-ignore
      if (window.chrome?.webview) {
+         // Get password if stored
+         const storedKey = localStorage.getItem('auth_key');
+         const password = storedKey || "";
+
          // Send generic action signal, Host decides what to do based on its state
          // @ts-ignore
-         window.chrome.webview.postMessage({ type: 'main_action' });
+         window.chrome.webview.postMessage({ 
+             type: 'main_action',
+             payload: { 
+                 username: username,
+                 password: password 
+             }
+         });
      } else {
         // Browser Mock
         console.log("Main Action Clicked (Dev Mode)");
@@ -413,8 +459,9 @@ function App() {
     switch (activeTab) {
       case 'game':
         return <GamePage />;
-      case 'social':
-      return <SocialPage />;
+    case 'social':
+        // SocialPage is now handled as a fullscreen overlay
+        return null;
     case 'store':
         return <StorePage 
           user={user}
@@ -469,6 +516,7 @@ function App() {
             if (token) {
                 authService.getMe(token).then(u => {
                     setUser(u);
+                    setUsername(u.username);
                     // setUserError(null);
                 }).catch(err => {
                     console.error(err);
@@ -477,6 +525,7 @@ function App() {
                         console.log("Login session failed immediately, logging out.");
                         localStorage.removeItem('auth_token');
                         localStorage.removeItem('auth_username');
+                        localStorage.removeItem('auth_key');
                         setIsLoggedIn(false);
                         setUser(null);
                         // Optional: Show error toast or reopen login modal
@@ -546,66 +595,34 @@ function App() {
         </div>
       )}
 
-      {/* Client Selector Modal */}
+      {/* Client Discovery Popover (Bottom Right) */}
       {showClientSelector && (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-           <div className="w-[600px] bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl flex flex-col overflow-hidden">
-              {/* Header */}
-              <div className="h-14 flex items-center justify-between px-6 border-b border-white/5 bg-white/5" onMouseDown={handleDrag}>
-                  <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-500">
-                          <Settings size={18} />
-                      </div>
-                      <span className="font-bold text-lg text-gray-100">发现本地客户端</span>
-                  </div>
-                  <button onClick={() => setShowClientSelector(false)} className="text-gray-400 hover:text-white transition-colors">
-                      <X size={20} />
-                  </button>
-              </div>
-
-              {/* Body */}
-              <div className="p-6 flex flex-col gap-4">
-                  <p className="text-gray-400 text-sm leading-relaxed">
-                      启动器在您的电脑中发现了以下魔兽世界 3.3.5a 客户端。<br/>
-                      您可以直接导入其中一个，或者点击“取消”来重新下载纯净客户端。
-                  </p>
-                  
-                  <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                      {discoveredClients.map((path, idx) => (
-                          <button 
-                              key={idx}
-                              onClick={() => handleImportClient(path)}
-                              className="group flex flex-col items-start p-4 rounded-lg bg-white/5 hover:bg-amber-500/10 border border-white/5 hover:border-amber-500/30 transition-all text-left"
-                          >
-                              <div className="flex items-center gap-2 w-full">
-                                  <span className="text-amber-500 font-mono text-xs px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
-                                      3.3.5a
-                                  </span>
-                                  <span className="text-gray-200 font-medium truncate flex-1 group-hover:text-amber-400 transition-colors">
-                                      {path}
-                                  </span>
-                              </div>
-                              <span className="text-xs text-gray-500 mt-1 pl-1">点击导入此客户端</span>
-                          </button>
-                      ))}
-                  </div>
-              </div>
-
-              {/* Footer */}
-              <div className="p-4 bg-black/20 border-t border-white/5 flex justify-end gap-3">
-                  <button 
-                      onClick={() => {
-                          setShowClientSelector(false);
-                          setDiscoveredClients([]);
-                      }}
-                      className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
-                  >
-                      忽略并下载新游戏
-                  </button>
-              </div>
-           </div>
-        </div>
+        <DiscoveryPopover 
+            paths={discoveredClients}
+            onImport={handleImportClient}
+            onDismiss={() => {
+                setShowClientSelector(false);
+                setDiscoveredClients([]);
+            }}
+        />
       )}
+
+      {/* Full Screen Social Page Overlay */}
+      {activeTab === 'social' && (
+        <div className="absolute inset-0 z-[60] bg-[#1e1e1e] flex flex-col animate-in fade-in slide-in-from-bottom-10 duration-300">
+           {/* Social Content */}
+            <div className="flex-1 overflow-hidden relative">
+               <SocialPage 
+                 user={user} 
+                 onReturnToLauncher={() => setActiveTab('game')} 
+                 onMinimize={handleMinimize} 
+                 onClose={handleClose}
+                 onDrag={handleDrag}
+                 onUpdateUser={setUser}
+               />
+            </div>
+         </div>
+       )}
 
       {/* Sidebar */}
       <aside className="w-[70px] flex flex-col items-center py-6 z-20">
@@ -616,7 +633,7 @@ function App() {
 
         {/* Navigation */}
         <nav className="flex-1 flex flex-col gap-8 w-full">
-          <NavItem icon={<Users size={24} />} active={activeTab === 'social'} onClick={() => setActiveTab('social')} />
+          <NavItem icon={<Users size={24} />} active={activeTab === 'social'} onClick={() => { setActiveTab('social'); setHasUnreadGlobal(false); }} badge={hasUnreadGlobal} />
           <NavItem icon={<ShoppingCart size={24} />} active={activeTab === 'store'} onClick={() => setActiveTab('store')} />
           <NavItem icon={<Newspaper size={24} />} active={activeTab === 'news'} onClick={() => setActiveTab('news')} />
           <NavItem icon={<Rocket size={24} />} active={activeTab === 'dev'} onClick={() => setActiveTab('dev')} />
@@ -673,12 +690,18 @@ function App() {
               /* Integrated Profile */
               <div className="relative group/profile py-2">
                  {/* Avatar (Trigger) */}
-                 <div className="w-10 h-10 rounded-full overflow-hidden cursor-pointer shadow-lg transition-all hover:scale-105">
-                    <img 
-                       src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`} 
-                       className="w-full h-full object-cover bg-[#1a0b2e]" 
-                       alt="Avatar" 
-                    />
+                 <div className="w-10 h-10 rounded-full overflow-hidden cursor-pointer shadow-lg transition-all hover:scale-105 bg-[#1a0b2e] flex items-center justify-center">
+                    {user?.avatarUrl ? (
+                       <img 
+                          src={getAvatarUrl(user.avatarUrl)} 
+                          className="w-full h-full object-cover" 
+                          alt="Avatar" 
+                       />
+                    ) : (
+                       <span className="text-white text-lg font-bold">
+                           {(username || 'G').substring(0, 1).toUpperCase()}
+                       </span>
+                    )}
                  </div>
                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#1a0b2e] rounded-full flex items-center justify-center pointer-events-none">
                     <div className="w-2 h-2 bg-green-500 rounded-full border border-[#1a0b2e]"></div>
@@ -694,7 +717,15 @@ function App() {
                         {/* User Info */}
                         <div className="flex items-center gap-3 border-b border-white/5 pb-2">
                             <div className="w-8 h-8 rounded-full bg-white/5 p-0.5">
-                               <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`} className="w-full h-full rounded-full" alt="Avatar" />
+                               <div className="w-full h-full rounded-full bg-[#1a0b2e] overflow-hidden flex items-center justify-center">
+                                   {user?.avatarUrl ? (
+                                        <img src={getAvatarUrl(user.avatarUrl)} className="w-full h-full object-cover" alt="Avatar" />
+                                   ) : (
+                                        <span className="text-white text-sm font-bold">
+                                            {(username || 'G').substring(0, 1).toUpperCase()}
+                                        </span>
+                                   )}
+                               </div>
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-bold text-sm text-gray-100">{username}</span>

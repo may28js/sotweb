@@ -203,8 +203,10 @@ export const authService = {
     try {
         const response = await fetch(`${API_BASE_URL}/Auth/me`, {
             headers: {
-                'Authorization': `Bearer ${token}`
-            }
+                'Authorization': `Bearer ${token}`,
+                'Cache-Control': 'no-store'
+            },
+            cache: 'no-store'
         });
         if (!response.ok) {
             const errorText = await response.text();
@@ -218,7 +220,12 @@ export const authService = {
             username: data.username || data.Username,
             email: data.email || data.Email,
             points: data.points !== undefined ? data.points : (data.Points !== undefined ? data.Points : 0),
-            accessLevel: data.accessLevel !== undefined ? data.accessLevel : (data.AccessLevel !== undefined ? data.AccessLevel : 0)
+            accessLevel: data.accessLevel !== undefined ? data.accessLevel : (data.AccessLevel !== undefined ? data.AccessLevel : 0),
+            avatarUrl: data.avatarUrl || data.AvatarUrl,
+            nickname: data.nickname || data.Nickname,
+            aboutMe: data.aboutMe || data.AboutMe,
+            preferredStatus: data.preferredStatus !== undefined ? data.preferredStatus : (data.PreferredStatus !== undefined ? data.PreferredStatus : 0),
+            roleColor: data.roleColor || data.RoleColor
         };
     } catch (error) {
         console.error("GetMe failed", error);

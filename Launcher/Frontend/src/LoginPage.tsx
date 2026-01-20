@@ -98,7 +98,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onDrag, onClose }) => {
       } else {
         const token = await authService.login(formData.username, formData.password);
         localStorage.setItem('auth_token', token);
-        localStorage.setItem('auth_username', formData.username);
+        if (formData.stayLoggedIn) {
+          localStorage.setItem('auth_username', formData.username);
+           // Store password for auto-login
+           localStorage.setItem('auth_key', formData.password);
+         } else {
+            // Clear if not staying logged in
+            localStorage.removeItem('auth_username');
+            localStorage.removeItem('auth_key');
+        }
         onLogin();
       }
     } catch (err: any) {

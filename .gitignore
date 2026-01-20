@@ -1,5 +1,12 @@
-# Dependency directories
+# Large files
+sotweb-main.zip
+*.exe
+!Launcher/Host/sot.ico
+!Launcher/Host/sot_small.bmp
+!Launcher/Host/wizard_large.bmp
+!Launcher/Host/wizard_small.bmp
 node_modules/
+
 bin/
 obj/
 packages/
@@ -51,4 +58,9 @@ docker-compose.override.yml
 
 PublishOutput/
 *.zip
+*.tar.gz
 .trae/
+
+# User Uploads
+WebBackend/Server/wwwroot/uploads/
+

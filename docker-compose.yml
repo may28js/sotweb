@@ -7,14 +7,14 @@ services:
     ports:
       - "5200:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Data Source=/app/data/storyoftime.db
+      - ConnectionStrings__DefaultConnection=Server=38.55.125.89;Port=3306;Database=storyoftime_community;Uid=sotwow;Pwd=sot123852;SslMode=None;
       - OwnerSettings__InitialOwnerUsername=sotmay
       # If you use MySQL in the future, add connection strings here
       # - ConnectionStrings__AuthConnection=...
     volumes:
-      - ./data:/app/data
+      # - ./data:/app/data # SQLite data no longer needed
       - ./uploads:/app/wwwroot/uploads
     restart: always
 

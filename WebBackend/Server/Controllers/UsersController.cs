@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StoryOfTime.Server.Data;
 using StoryOfTime.Server.Models;
+using StoryOfTime.Server.DTOs;
 using System.Security.Claims;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace StoryOfTime.Server.Controllers
 {
@@ -13,10 +15,12 @@ namespace StoryOfTime.Server.Controllers
     public class UsersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
 
-        public UsersController(ApplicationDbContext context)
+        public UsersController(ApplicationDbContext context, Microsoft.Extensions.Caching.Memory.IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         // GET: api/Users
@@ -109,6 +113,111 @@ namespace StoryOfTime.Server.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Avatar updated successfully", avatarUrl = user.AvatarUrl });
+        }
+
+        // GET: api/Users/profile/{userId?}
+        [HttpGet("profile/{userId?}")]
+        public async Task<ActionResult<UserProfileDto>> GetProfile(int? userId = null)
+        {
+            if (userId == null)
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("nameid");
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int id)) return Unauthorized();
+                userId = id;
+            }
+
+            var user = await _context.Users
+                .Include(u => u.CommunityRoles)
+                .ThenInclude(ur => ur.CommunityRole)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+                
+            if (user == null) return NotFound();
+
+            var allRoles = await _cache.GetOrCreateAsync("CommunityRoles", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+                return await _context.CommunityRoles.OrderByDescending(r => r.SortOrder).ToListAsync();
+            }) ?? new List<CommunityRole>();
+
+            string roleColor = GetUserRoleColor(user, allRoles);
+
+            return new UserProfileDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Nickname = user.Nickname,
+                AboutMe = user.AboutMe,
+                AvatarUrl = user.AvatarUrl,
+                PreferredStatus = user.PreferredStatus,
+                RoleColor = roleColor,
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        private string GetUserRoleColor(User user, List<CommunityRole> allRoles)
+        {
+            if (user == null) return "#ffffff";
+            
+            var userRoleIds = user.CommunityRoles?.Select(ur => ur.CommunityRoleId).ToList() ?? new List<int>();
+            
+            // Combine Explicit Roles and Implicit System Roles (based on AccessLevel)
+            var effectiveRoles = allRoles
+                .Where(r => userRoleIds.Contains(r.Id) || (r.AccessLevel.HasValue && r.AccessLevel == user.AccessLevel))
+                .OrderByDescending(r => r.SortOrder)
+                .ToList();
+
+            var topRole = effectiveRoles.FirstOrDefault();
+            return topRole?.Color ?? "#ffffff";
+        }
+
+        // PUT: api/Users/profile
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("nameid");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId)) return Unauthorized();
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            if (request.Nickname != null) user.Nickname = request.Nickname;
+            if (request.AboutMe != null) user.AboutMe = request.AboutMe;
+            if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
+            if (request.PreferredStatus.HasValue) user.PreferredStatus = request.PreferredStatus.Value;
+
+            await _context.SaveChangesAsync();
+
+            // Fetch roles to calculate RoleColor
+            // We need to reload CommunityRoles to be safe, but since this is just profile update (name/bio),
+            // roles likely didn't change. But we need to call GetUserRoleColor which needs CommunityRoles loaded on user.
+            // _context.Users.FindAsync doesn't include related data.
+            // We can explicitly load it or just re-fetch.
+            
+            await _context.Entry(user).Collection(u => u.CommunityRoles).LoadAsync();
+            foreach (var cr in user.CommunityRoles)
+            {
+                await _context.Entry(cr).Reference(r => r.CommunityRole).LoadAsync();
+            }
+
+            var allRoles = await _cache.GetOrCreateAsync("CommunityRoles", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+                return await _context.CommunityRoles.OrderByDescending(r => r.SortOrder).ToListAsync();
+            }) ?? new List<CommunityRole>();
+
+            string roleColor = GetUserRoleColor(user, allRoles);
+
+            return Ok(new { message = "Profile updated successfully", profile = new UserProfileDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Nickname = user.Nickname,
+                AboutMe = user.AboutMe,
+                AvatarUrl = user.AvatarUrl,
+                PreferredStatus = user.PreferredStatus,
+                RoleColor = roleColor,
+                CreatedAt = user.CreatedAt
+            }});
         }
     }
 
