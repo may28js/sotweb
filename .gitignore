@@ -11,6 +11,12 @@ bin/
 obj/
 packages/
 
+# Scripts
+*.py
+*.ps1
+!Launcher/build_and_run.ps1
+!Launcher/setup.iss
+
 # Next.js build output
 .next/
 out/
