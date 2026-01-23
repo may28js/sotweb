@@ -1,10 +1,6 @@
 import paramiko
 import os
 
-hostname = "38.55.125.89"
-username = "root"
-password = "ylykFZBW8281"
-port = 22
 
 local_path = r"F:\工作区\模块开发\StoryOfTimeLauncher\webbackend\server\Program.cs"
 remote_path = "/root/sotcommunity/Program.cs"
