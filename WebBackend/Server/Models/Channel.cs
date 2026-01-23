@@ -30,6 +30,12 @@ namespace StoryOfTime.Server.Models
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public bool HasUnread { get; set; }
 
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public int LastReadMessageId { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public DateTime LastReadAt { get; set; }
+
         public ICollection<ChannelPermissionOverride> PermissionOverrides { get; set; } = new List<ChannelPermissionOverride>();
     }
 }

@@ -13,7 +13,7 @@ const ShopCard = ({ item, onAddToCart }: { item: ShopItem, onAddToCart: (item: S
       {/* Image Area */}
       <div className="relative h-48 bg-[#151515] flex items-center justify-center overflow-hidden cursor-pointer group-hover:bg-[#1f1f1f] transition-colors">
          <img 
-           src={getImageUrl(item.iconUrl) || '/images/placeholder.jpg'} 
+           src={getImageUrl(item.iconUrl || '') || '/images/placeholder.jpg'} 
            alt={item.name} 
            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 z-0 opacity-80 group-hover:opacity-100"
          />

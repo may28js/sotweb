@@ -22,6 +22,8 @@ Debug/
 Release/
 publish/
 **/publish/
+Launcher/BuildOutput/
+Launcher/Installer/
 
 # Environment variables
 .env
@@ -63,4 +65,3 @@ PublishOutput/
 
 # User Uploads
 WebBackend/Server/wwwroot/uploads/
-

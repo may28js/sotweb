@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { type User } from '../types';
-import { X, MessageSquare, UserPlus } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { api, getAvatarUrl } from '../lib/api';
 import ConfirmationModal from './ConfirmationModal';
 
@@ -10,9 +10,10 @@ interface UserProfileCardProps {
     onClose: () => void;
     currentUser: User | null;
     onEditProfile?: () => void;
+    customStyle?: React.CSSProperties;
 }
 
-const UserProfileCard: React.FC<UserProfileCardProps> = ({ user: initialUser, position, onClose, currentUser, onEditProfile }) => {
+const UserProfileCard: React.FC<UserProfileCardProps> = ({ user: initialUser, position, onClose, currentUser, onEditProfile, customStyle }) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const [user, setUser] = useState<User>(initialUser);
     const [dmMessage, setDmMessage] = useState('');
@@ -113,10 +114,12 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({ user: initialUser, po
     }, [onClose, initialUser.id]);
 
     // Calculate position to keep it on screen
-    const style: React.CSSProperties = {
+    const defaultStyle: React.CSSProperties = {
         top: Math.min(position.y, window.innerHeight - 400),
         left: Math.min(position.x, window.innerWidth - 320),
     };
+
+    const style = customStyle || defaultStyle;
 
     // Status Indicator Color
     const getStatusColor = (status?: number) => {

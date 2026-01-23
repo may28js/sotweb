@@ -11,6 +11,7 @@ nginx_conf = """worker_processes 1;
 events { worker_connections 1024; }
 
 http {
+    client_max_body_size 20M;
     sendfile on;
 
     map $http_upgrade $connection_upgrade {

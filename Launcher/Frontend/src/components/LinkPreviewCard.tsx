@@ -71,4 +71,4 @@ const LinkPreviewCard: React.FC<LinkPreviewCardProps> = ({ embeds }) => {
     );
 };
 
-export default LinkPreviewCard;
+export default React.memo(LinkPreviewCard);

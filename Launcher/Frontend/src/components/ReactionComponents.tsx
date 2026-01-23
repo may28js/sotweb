@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../lib/utils';
-import { Smile, Plus } from 'lucide-react';
-import EmojiPicker, { type EmojiClickData, Theme, Categories } from 'emoji-picker-react';
+import { Smile } from 'lucide-react';
+import EmojiPicker, { Theme, Categories, EmojiStyle } from 'emoji-picker-react';
 import { type Reaction } from '../types';
 
 interface ReactionListProps {
@@ -12,7 +12,7 @@ interface ReactionListProps {
     className?: string;
 }
 
-export const ReactionList: React.FC<ReactionListProps> = ({
+export const ReactionList: React.FC<ReactionListProps> = React.memo(({
     reactions,
     currentUserId,
     onToggleReaction,
@@ -61,7 +61,7 @@ export const ReactionList: React.FC<ReactionListProps> = ({
             ))}
         </div>
     );
-};
+});
 
 interface MessageReactionActionProps {
     onEmojiSelect: (emoji: string) => void;
@@ -277,6 +277,7 @@ export const MessageReactionAction: React.FC<MessageReactionActionProps> = ({ on
                     `}</style>
                      <EmojiPicker
                         theme={Theme.DARK}
+                        emojiStyle={EmojiStyle.NATIVE}
                         onEmojiClick={(emojiData) => {
                             onEmojiSelect(emojiData.emoji);
                             setShowPicker(false);

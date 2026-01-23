@@ -1,84 +1,84 @@
-export interface ShopItem {
-  id: number;
-  gameItemId?: number;
-  name: string;
-  description: string;
-  price: number;
-  originalPrice?: number;
-  currency: 'gem' | 'vote';
-  iconUrl: string;
-  category: string;
-  tags?: string[];
-  discount?: number;
-  featured?: boolean;
-  isUnique?: boolean;
-}
 
-export interface NewsItem {
-  id: string;
-  tag: string;
-  title: string;
-  desc: string;
-  image: string;
-  date: string;
-  url?: string;
-}
+// --- Community Types ---
 
-export interface PatchNoteItem {
-  version: string;
-  date: string;
-  content: string;
-  highlight?: boolean;
-}
-
-export interface ServerStatus {
-  status: string;
-  onlinePlayers: number;
-  maxPlayers: number;
-  uptime: string;
-}
-
-export interface LauncherConfig {
-  realmlist: string;
-  websiteUrl: string;
-  registerUrl: string;
-  latestVersion: string;
-  downloadUrl: string;
-}
-
-export interface Character {
-  name: string;
-  race: number;
-  class: number;
-  level: number;
-  gender: number;
-}
+export const CommunityPermissions = {
+    None: 0,
+    ViewChannels: 1 << 0,
+    SendMessages: 1 << 1,
+    ManageMessages: 1 << 2,
+    ManageChannels: 1 << 3,
+    ManageRoles: 1 << 4,
+    MentionEveryone: 1 << 5,
+    KickMembers: 1 << 6,
+    BanMembers: 1 << 7,
+    Administrator: 1 << 8,
+    Connect: 1 << 9
+} as const;
+export type CommunityPermissions = number;
 
 export interface User {
-  id: number;
-  username: string;
-  nickname?: string;
-  aboutMe?: string;
-  email: string;
-  points: number;
-  accessLevel: number;
-  avatarUrl?: string;
-  preferredStatus?: number;
-  createdAt?: string;
-  roleColor?: string;
+    id: number;
+    username: string;
+    nickname?: string;
+    avatarUrl?: string;
+    email?: string;
+    accessLevel: number;
+    preferredStatus?: number; // 0=online, 1=idle, 2=dnd, 3=offline
+    points: number;
+    roles?: number[]; // IDs
+    communityRoles?: UserCommunityRole[];
+    lastReadGlobalNotifyAt?: string;
+    bio?: string;
+    joinDate?: string;
+    aboutMe?: string;
+    createdAt?: string;
+    roleColor?: string;
 }
 
-export interface CartItem extends ShopItem {
-  quantity: number;
+export interface UserCommunityRole {
+    userId: number;
+    communityRoleId: number;
+    communityRole?: CommunityRole;
 }
 
-export interface EmbedData {
-    type: string;
-    provider_name: string;
-    title: string;
-    author_name: string;
-    thumbnail_url: string;
-    url: string;
+export interface CommunityRole {
+    id: number;
+    name: string;
+    color: string;
+    permissions: number;
+    sortOrder: number;
+    isHoisted: boolean;
+    accessLevel?: number;
+}
+
+export interface ChannelPermissionOverride {
+    id: number;
+    channelId: number;
+    roleId: number;
+    allow: number;
+    deny: number;
+}
+
+export interface Channel {
+    id: number;
+    name: string;
+    type: 'Chat' | 'Forum' | 'Voice';
+    categoryId?: number;
+    sortOrder: number;
+    permissionOverrides?: ChannelPermissionOverride[];
+    lastActivityAt?: string;
+    hasUnread?: boolean;
+    unreadCount?: number;
+    lastReadMessageId?: number;
+    lastReadAt?: string;
+    description?: string;
+}
+
+export interface Category {
+    id: number;
+    name: string;
+    sortOrder: number;
+    channels: Channel[];
 }
 
 export interface CommunitySettings {
@@ -87,60 +87,7 @@ export interface CommunitySettings {
     iconUrl?: string;
     themeImageUrl?: string;
     defaultChannelId?: number;
-    lastGlobalNotifyAt?: string;
-}
-
-export interface CommunityRole {
-    id: number;
-    name: string;
-    color: string;
-    isHoisted: boolean;
-    permissions: number;
-    sortOrder: number;
-}
-
-export interface Channel {
-    id: number;
-    name: string;
-    description?: string;
-    type: 'Chat' | 'Voice' | 'Forum';
-    categoryId?: number;
-    permissionOverrides?: ChannelPermissionOverride[];
-}
-
-export interface ChannelPermissionOverride {
-    id: number;
-    channelId: number;
-    roleId: number;
-    allow: number; // long in C# is number in TS (up to 2^53 safe integer)
-    deny: number;
-}
-
-export interface Category {
-    id: number;
-    name: string;
-    sortOrder: number;
-}
-
-export enum CommunityPermissions {
-    None = 0,
-    ViewChannels = 1 << 0,
-    SendMessages = 1 << 1,
-    ManageMessages = 1 << 2,
-    ManageChannels = 1 << 3,
-    ManageRoles = 1 << 4,
-    MentionEveryone = 1 << 5,
-    KickMembers = 1 << 6,
-    BanMembers = 1 << 7,
-    Administrator = 1 << 8,
-    Connect = 1 << 9
-}
-
-export interface Reaction {
-    userId: number;
-    emoji: string;
-    messageId?: number;
-    postId?: number;
+    lastGlobalNotifyAt: string;
 }
 
 export interface Message {
@@ -150,54 +97,134 @@ export interface Message {
     content: string;
     createdAt: string;
     updatedAt?: string;
-    isDeleted?: boolean;
-    username?: string;
-    nickname?: string;
-    avatarUrl?: string;
-    roleColor?: string;
-    user?: {
-        id: number;
-        username: string;
-        nickname?: string;
-        avatarUrl?: string;
-        accessLevel?: number;
-    };
+    user?: User;
+    attachmentUrls?: string[];
     embeds?: EmbedData[];
-    isSending?: boolean;
-    isError?: boolean;
-    postId?: number;
+    replyToId?: number;
     replyTo?: Message;
     reactions?: Reaction[];
+    postId?: number;
+    
+    // Optimistic UI
+    isSending?: boolean;
+    isError?: boolean;
+    pendingFiles?: any[];
+}
+
+export interface Reaction {
+    messageId: number;
+    userId: number;
+    emoji: string;
 }
 
 export interface Post {
     id: number;
+    channelId: number;
+    authorId: number;
     title: string;
     content: string;
     createdAt: string;
+    updatedAt?: string;
     lastActivityAt: string;
-    author: {
-        id: number;
-        username: string;
-        nickname?: string;
-        avatarUrl?: string;
-        accessLevel: number;
-        roleColor?: string;
-    };
-    messageCount: number;
-    attachmentUrls: string[];
-    isUnread: boolean;
-    lastReadAt: string;
-    reactions: Reaction[];
+    viewCount: number;
+    replyCount: number;
+    messageCount?: number;
+    author?: User;
+    attachmentUrls?: string[];
+    embeds?: EmbedData[];
+    isPinned: boolean;
+    isLocked: boolean;
+    hasUnread?: boolean;
+    unreadCount?: number;
+    lastReadMessageId?: number;
 }
 
-export interface Member {
+export interface EmbedData {
+    type: 'link' | 'video' | 'photo' | 'rich';
+    url: string;
+    title?: string;
+    description?: string;
+    siteName?: string;
+    site_name?: string;
+    thumbnailUrl?: string;
+    thumbnail_url?: string;
+    providerName?: string;
+    provider_name?: string;
+    authorName?: string;
+    author_name?: string;
+    html?: string;
+    width?: number;
+    height?: number;
+}
+
+export interface Member extends User {
+    joinedAt?: string;
+}
+
+// --- Store / Launcher Types ---
+
+export interface ShopItem {
     id: number;
-    username: string;
-    nickname?: string;
-    avatarUrl?: string;
-    preferredStatus: number; // 0=Online, 1=Idle, 2=DND, 3=Offline
-    accessLevel: number;
-    roles: number[];
-    roleColor?: string;
+    name: string;
+    description: string;
+    price: number;
+    iconUrl?: string;
+    category: string;
+    isUnique?: boolean;
+    originalPrice?: number;
+    currency?: string;
+    discount?: number;
+    featured?: boolean;
+}
+
+export interface CartItem extends ShopItem {
+    quantity: number;
+}
+
+export interface NewsItem {
+    id: string;
+    title: string;
+    desc: string;
+    date: string;
+    tag: string;
+    image: string;
+    content?: string;
+}
+
+export interface PatchNoteItem {
+    version: string;
+    date: string;
+    changes?: string[];
+    content?: string;
+    highlight?: boolean;
+}
+
+export interface LauncherConfig {
+    apiBaseUrl?: string;
+    enableMockData?: boolean;
+    version?: string;
+    realmlist?: string;
+    websiteUrl?: string;
+    registerUrl?: string;
+    latestVersion?: string;
+    downloadUrl?: string;
+}
+
+export interface ServerStatus {
+    id?: number;
+    name?: string;
+    isOnline?: boolean;
+    onlineCount?: number;
+    status?: string;
+    maxPlayers?: number;
+    uptime?: string;
+}
+
+export interface Character {
+    guid: number;
+    name: string;
+    race: number;
+    class: number;
+    gender: number;
+    level: number;
 }

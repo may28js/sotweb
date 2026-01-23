@@ -142,9 +142,7 @@ function App() {
           if (!isLoggedIn) return;
           try {
               const res = await api.get('/community/notification-status');
-              if (res.data.hasUnreadGlobal) {
-                  setHasUnreadGlobal(true);
-              }
+              setHasUnreadGlobal(!!res.data.hasUnreadGlobal);
           } catch (err) {
               // ignore errors
           }
@@ -157,6 +155,21 @@ function App() {
       }
   }, [isLoggedIn]);
 
+  // Listen for navigation events from deep links
+  useEffect(() => {
+    const handleNavigate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setActiveTab('social');
+        // The event will also be caught by SocialPage to handle specific navigation
+      }
+    };
+
+    window.addEventListener('storyoftime-navigate', handleNavigate);
+    return () => window.removeEventListener('storyoftime-navigate', handleNavigate);
+  }, []);
+
+  // Initialize Launcher
   useEffect(() => {
     // Check for existing token
     const token = localStorage.getItem('auth_token');
@@ -633,7 +646,7 @@ function App() {
 
         {/* Navigation */}
         <nav className="flex-1 flex flex-col gap-8 w-full">
-          <NavItem icon={<Users size={24} />} active={activeTab === 'social'} onClick={() => { setActiveTab('social'); setHasUnreadGlobal(false); }} badge={hasUnreadGlobal} />
+          <NavItem icon={<Users size={24} />} active={activeTab === 'social'} onClick={() => setActiveTab('social')} badge={hasUnreadGlobal} />
           <NavItem icon={<ShoppingCart size={24} />} active={activeTab === 'store'} onClick={() => setActiveTab('store')} />
           <NavItem icon={<Newspaper size={24} />} active={activeTab === 'news'} onClick={() => setActiveTab('news')} />
           <NavItem icon={<Rocket size={24} />} active={activeTab === 'dev'} onClick={() => setActiveTab('dev')} />

@@ -10,7 +10,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>sot.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <!-- 单文件发布配置 -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>

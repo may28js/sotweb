@@ -34,5 +34,8 @@ namespace StoryOfTime.Server.Models
         public ICollection<Message> Messages { get; set; } = new List<Message>();
 
         public ICollection<PostReaction> Reactions { get; set; } = new List<PostReaction>();
+
+        [NotMapped]
+        public int LastReadMessageId { get; set; }
     }
 }

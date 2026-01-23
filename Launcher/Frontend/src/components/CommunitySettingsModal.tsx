@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { api } from '../lib/api';
+import { api, getAvatarUrl, COMMUNITY_BASE_URL } from '../lib/api';
 import { type CommunitySettings, type CommunityRole, CommunityPermissions, type Channel, type ChannelPermissionOverride } from '../types';
 import { X, Save, Trash2, Search,
-    UserPlus,
     Check,
     ImageIcon,
     Plus,
-    Shield,
-    MoreVertical
+    Shield
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { getAvatarUrl } from '../lib/api';
+
 
 const PermissionTriState = ({ state, onChange }: { state: 'allow' | 'deny' | 'inherit', onChange: (s: 'allow' | 'deny' | 'inherit') => void }) => {
     return (
@@ -74,7 +72,7 @@ const CommunitySettingsModal: React.FC<CommunitySettingsModalProps> = ({ isOpen,
     const [settings, setSettings] = useState<CommunitySettings | null>(null);
     const [roles, setRoles] = useState<CommunityRole[]>([]);
     const [members, setMembers] = useState<Member[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    // const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
     // Overview State
@@ -99,7 +97,7 @@ const CommunitySettingsModal: React.FC<CommunitySettingsModalProps> = ({ isOpen,
     // AbortController Ref
     const updateRoleAbortControllerRef = useRef<AbortController | null>(null);
     // Debounce Ref
-    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -121,7 +119,7 @@ const CommunitySettingsModal: React.FC<CommunitySettingsModalProps> = ({ isOpen,
     }, [isOpen]);
 
     const fetchSettings = async () => {
-        setIsLoading(true);
+        // setIsLoading(true);
         try {
             const [settingsRes, channelsRes] = await Promise.all([
                 api.get('/Community/settings'),
@@ -140,7 +138,7 @@ const CommunitySettingsModal: React.FC<CommunitySettingsModalProps> = ({ isOpen,
         } catch (err) {
             console.error("Failed to fetch settings", err);
         } finally {
-            setIsLoading(false);
+            // setIsLoading(false);
         }
     };
 
@@ -213,7 +211,19 @@ const CommunitySettingsModal: React.FC<CommunitySettingsModalProps> = ({ isOpen,
             
             try {
                 setUploading(true);
-                const res = await api.post('/Upload/image?type=community', formData, {
+                // Use COMMUNITY_BASE_URL to ensure upload goes to the community backend volume
+
+                // If COMMUNITY_BASE_URL is relative (DEV), api.post handles it if we pass full url? 
+                // No, api.post uses baseURL. We should use axios directly or force full URL.
+                // In PROD, COMMUNITY_BASE_URL is absolute. In DEV it is relative.
+                // If relative, api instance (axios) handles it if it matches baseURL, but here it might differ.
+                // Safer to use api.post with the full path if absolute, or rely on proxy if relative.
+                
+                // Construct URL: remove trailing slash if any to avoid double slash
+                const baseUrl = COMMUNITY_BASE_URL.endsWith('/') ? COMMUNITY_BASE_URL.slice(0, -1) : COMMUNITY_BASE_URL;
+                const endpoint = `${baseUrl}/Upload/image?type=community`;
+                
+                const res = await api.post(endpoint, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 if (res.data && res.data.url) {
@@ -412,7 +422,7 @@ const CommunitySettingsModal: React.FC<CommunitySettingsModalProps> = ({ isOpen,
                                             />
                                             {themeImageUrl ? (
                                                 <>
-                                                    <img src={themeImageUrl} className="w-full h-full object-cover" />
+                                                    <img src={getAvatarUrl(themeImageUrl)} className="w-full h-full object-cover" />
                                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <span className="text-white text-sm font-medium flex items-center gap-2">
                                                             <ImageIcon size={16} />

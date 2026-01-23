@@ -1,25 +1,6 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { format, isToday, isYesterday } from "date-fns"
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
-
-export function formatMessageDate(dateInput: Date | string): string {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-    
-    if (isToday(date)) {
-        return format(date, 'HH:mm');
-    } else if (isYesterday(date)) {
-        return `昨天 ${format(date, 'HH:mm')}`;
-    } else {
-        return format(date, 'yyyy/MM/dd HH:mm');
-    }
-}
-
-export function parseColorToRgba(color: string | number, alpha: number): string | null {
-    if (color === null || color === undefined || color === '') return null;
+function parseColorToRgba(color: string | number, alpha: number): string | null {
+    if (!color) return null;
     
     const cleanColor = String(color).trim();
     
@@ -77,6 +58,17 @@ export function parseColorToRgba(color: string | number, alpha: number): string 
     return null;
 }
 
-export function escapeRegExp(string: string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+const testColors = [
+    { name: "Purple Int (Signed)", value: -8388480 },
+    { name: "Purple Int (Unsigned)", value: 4286578816 },
+    { name: "Purple Hex", value: "#800080" },
+    { name: "Purple Hex No Hash", value: "800080" },
+    { name: "Cyan Int", value: -16711681 }, 
+    { name: "Zero", value: 0 },
+    { name: "String Int", value: "-8388480" }
+];
+
+testColors.forEach(c => {
+    // @ts-ignore
+    console.log(`${c.name}: ${c.value} -> ${parseColorToRgba(c.value, 1)}`);
+});

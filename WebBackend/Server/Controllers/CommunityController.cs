@@ -28,7 +28,6 @@ namespace StoryOfTime.Server.Controllers
             _oEmbedService = oEmbedService;
             _hubContext = hubContext;
         }
-
         // ... [Existing Channel Methods] ...
 
         [HttpGet("notification-status")]
@@ -43,11 +42,12 @@ namespace StoryOfTime.Server.Controllers
             if (user == null) return NotFound();
 
             var settings = await _context.CommunitySettings.FirstOrDefaultAsync();
-            if (settings == null) return Ok(new { hasUnreadGlobal = false });
+            
+            bool hasUnreadGlobal = settings != null && settings.LastGlobalNotifyAt > user.LastReadGlobalNotifyAt;
+            bool hasUnreadMentions = await _context.UserChannelStates
+                .AnyAsync(ucs => ucs.UserId == userId && ucs.UnreadMentionCount > 0);
 
-            bool hasUnread = settings.LastGlobalNotifyAt > user.LastReadGlobalNotifyAt;
-
-            return Ok(new { hasUnreadGlobal = hasUnread });
+            return Ok(new { hasUnreadGlobal = hasUnreadGlobal || hasUnreadMentions });
         }
 
         [HttpPost("mark-global-read")]
@@ -66,6 +66,8 @@ namespace StoryOfTime.Server.Controllers
 
             return Ok();
         }
+
+
 
         [HttpGet("channels")]
         public async Task<ActionResult<IEnumerable<Channel>>> GetChannels()
@@ -92,6 +94,8 @@ namespace StoryOfTime.Server.Controllers
                     {
                         channel.UnreadCount = state.UnreadMentionCount;
                         channel.HasUnread = channel.LastActivityAt > state.LastReadAt;
+                        channel.LastReadMessageId = state.LastReadMessageId;
+                        channel.LastReadAt = state.LastReadAt;
                     }
                     else
                     {
@@ -100,6 +104,8 @@ namespace StoryOfTime.Server.Controllers
                         // But wait, if it is a newly created channel, user hasn't read it.
                         // So HasUnread = true is correct.
                         channel.HasUnread = true;
+                        channel.LastReadMessageId = 0;
+                        channel.LastReadAt = DateTime.MinValue;
                     }
                 }
             }
@@ -125,7 +131,7 @@ namespace StoryOfTime.Server.Controllers
         }
 
         [HttpGet("channels/{channelId}/messages")]
-        public async Task<ActionResult<IEnumerable<object>>> GetMessages(int channelId, int limit = 50)
+        public async Task<ActionResult<IEnumerable<object>>> GetMessages(int channelId, int limit = 50, DateTime? before = null)
         {
             var allRoles = await _cache.GetOrCreateAsync("CommunityRoles", async entry =>
             {
@@ -133,8 +139,15 @@ namespace StoryOfTime.Server.Controllers
                 return await _context.CommunityRoles.OrderByDescending(r => r.SortOrder).ToListAsync();
             }) ?? new List<CommunityRole>();
 
-            var messages = await _context.Messages
-                .Where(m => m.ChannelId == channelId && m.PostId == null) // Only chat messages, not post replies
+            var query = _context.Messages
+                .Where(m => m.ChannelId == channelId && m.PostId == null); // Only chat messages, not post replies
+
+            if (before.HasValue)
+            {
+                query = query.Where(m => m.CreatedAt < before.Value);
+            }
+
+            var messages = await query
                 .OrderByDescending(m => m.CreatedAt)
                 .Take(limit)
                 .Include(m => m.User)
@@ -146,6 +159,102 @@ namespace StoryOfTime.Server.Controllers
             var result = messages.Select(m => MapMessage(m, allRoles)).OrderBy(m => ((dynamic)m).createdAt).ToList();
 
             return Ok(result);
+        }
+
+        [Authorize]
+        [HttpPost("channels/{channelId}/messages")]
+        public async Task<ActionResult<object>> CreateMessage(int channelId, [FromBody] CreateMessageDto request)
+        {
+            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                         ?? User.FindFirst("id")?.Value;
+            if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
+
+            // Check SendMessages Permission (1)
+            if (!await HasPermissionAsync(userId, 1)) return Forbid();
+
+            // Process Embeds
+            string? embedsJson = null;
+            try 
+            {
+                var embedsList = await _oEmbedService.ProcessContentAsync(request.Content);
+                if (embedsList.Any())
+                {
+                    embedsJson = JsonSerializer.Serialize(embedsList);
+                }
+            }
+            catch {}
+
+            string? attachmentUrlsJson = null;
+            if (request.AttachmentUrls != null && request.AttachmentUrls.Any())
+            {
+                attachmentUrlsJson = JsonSerializer.Serialize(request.AttachmentUrls);
+            }
+
+            // Handle TimeZone
+            TimeZoneInfo cstZone;
+            try { cstZone = TimeZoneInfo.FindSystemTimeZoneById("China Standard Time"); }
+            catch { try { cstZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Shanghai"); } catch { cstZone = TimeZoneInfo.Utc; } }
+
+            var message = new Message
+            {
+                ChannelId = channelId,
+                UserId = userId,
+                Content = request.Content,
+                CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cstZone),
+                AttachmentUrls = attachmentUrlsJson,
+                Embeds = embedsJson,
+                ReplyToId = request.ReplyToId
+            };
+
+            _context.Messages.Add(message);
+            
+            // Update Channel LastActivity
+            var channel = await _context.Channels.FindAsync(channelId);
+            if (channel != null)
+            {
+                channel.LastActivityAt = message.CreatedAt;
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Reload for response mapping
+            await _context.Entry(message).Reference(m => m.User).LoadAsync();
+            if (message.User != null)
+                await _context.Entry(message.User).Collection(u => u.CommunityRoles).LoadAsync();
+            
+            if (message.ReplyToId.HasValue)
+            {
+                 await _context.Entry(message).Reference(m => m.ReplyTo).LoadAsync();
+                 if (message.ReplyTo?.User != null)
+                     await _context.Entry(message.ReplyTo).Reference(r => r.User).LoadAsync();
+            }
+
+            var allRoles = await _cache.GetOrCreateAsync("CommunityRoles", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+                return await _context.CommunityRoles.OrderByDescending(r => r.SortOrder).ToListAsync();
+            }) ?? new List<CommunityRole>();
+
+            var responseObj = MapMessage(message, allRoles);
+
+            // Broadcast
+            await _hubContext.Clients.Group(channelId.ToString()).SendAsync("MessageCreated", responseObj);
+            
+            // Global Notification Check (@everyone, @role)
+            // Using a simplified check for now
+            if (request.Content.Contains("@everyone") || request.Content.Contains("@here"))
+            {
+                // Update Global Notify Time
+                 var settings = await _context.CommunitySettings.FirstOrDefaultAsync();
+                 if (settings != null)
+                 {
+                     settings.LastGlobalNotifyAt = DateTime.UtcNow;
+                     await _context.SaveChangesAsync();
+                     await _hubContext.Clients.Group("Global").SendAsync("GlobalNotification", new { type = "everyone", channelId });
+                 }
+            }
+
+            return CreatedAtAction(nameof(GetMessages), new { channelId }, responseObj);
         }
 
         private object MapMessage(Message m, List<CommunityRole> allRoles)
@@ -302,13 +411,96 @@ namespace StoryOfTime.Server.Controllers
                     },
                     MessageCount = msgCount,
                     AttachmentUrls = attachmentUrls,
+                    Embeds = embeds,
                     isUnread,
                     lastReadAt,
+                    lastReadMessageId = state?.LastReadMessageId ?? 0,
                     Reactions = postReactions
                 };
             });
 
             return Ok(finalResult);
+        }
+
+        [HttpGet("posts/{id}")]
+        public async Task<ActionResult<object>> GetPost(int id)
+        {
+            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                         ?? User.FindFirst("id")?.Value;
+            int.TryParse(userIdStr, out int userId);
+
+            var post = await _context.Posts
+                .Include(p => p.Author)
+                .ThenInclude(u => u.CommunityRoles)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (post == null) return NotFound();
+
+            var allRoles = await _cache.GetOrCreateAsync("CommunityRoles", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+                return await _context.CommunityRoles.OrderByDescending(r => r.SortOrder).ToListAsync();
+            }) ?? new List<CommunityRole>();
+
+            var state = await _context.UserPostStates
+                .FirstOrDefaultAsync(ups => ups.UserId == userId && ups.PostId == id);
+
+            var messageCount = await _context.Messages.CountAsync(m => m.PostId == id);
+            
+            var reactions = await _context.PostReactions
+                .Where(r => r.PostId == id)
+                .Select(r => new { r.UserId, r.Emoji })
+                .ToListAsync();
+
+            List<string> attachmentUrls = new List<string>();
+            if (!string.IsNullOrEmpty(post.AttachmentUrls))
+            {
+                try 
+                {
+                    if (post.AttachmentUrls.TrimStart().StartsWith("["))
+                    {
+                        attachmentUrls = System.Text.Json.JsonSerializer.Deserialize<List<string>>(post.AttachmentUrls) ?? new List<string>();
+                    }
+                    else
+                    {
+                        attachmentUrls.Add(post.AttachmentUrls);
+                    }
+                }
+                catch 
+                {
+                    attachmentUrls.Add(post.AttachmentUrls);
+                }
+            }
+            
+            var isUnread = state == null || post.LastActivityAt > state.LastReadAt;
+            var lastReadAt = state?.LastReadAt ?? DateTime.MinValue;
+            string? roleColor = GetUserRoleColor(post.Author, allRoles);
+
+            var result = new {
+                post.Id,
+                post.ChannelId,
+                post.Title,
+                post.Content,
+                post.CreatedAt,
+                post.LastActivityAt,
+                Author = new {
+                    post.Author.Id,
+                    post.Author.Username,
+                    post.Author.Nickname,
+                    post.Author.AvatarUrl,
+                    post.Author.AccessLevel,
+                    RoleColor = roleColor
+                },
+                MessageCount = messageCount,
+                AttachmentUrls = attachmentUrls,
+                Embeds = SafeDeserializeEmbeds(post.Embeds),
+                isUnread,
+                lastReadAt,
+                lastReadMessageId = state?.LastReadMessageId ?? 0,
+                Reactions = reactions
+            };
+
+            return Ok(result);
         }
 
         [Authorize]
@@ -412,6 +604,15 @@ namespace StoryOfTime.Server.Controllers
                 // Broadcast to channel
                 await _hubContext.Clients.Group(channelId.ToString()).SendAsync("PostCreated", response);
 
+                // Broadcast lightweight notification to Global group (for unread indicators)
+                await _hubContext.Clients.Group("Global").SendAsync("NewPostNotification", new 
+                {
+                    channelId = post.ChannelId,
+                    postId = post.Id,
+                    userId = post.AuthorId,
+                    createdAt = post.CreatedAt
+                });
+
                 return CreatedAtAction(nameof(GetPosts), new { channelId }, response);
             }
             catch (Exception ex)
@@ -459,6 +660,8 @@ namespace StoryOfTime.Server.Controllers
             bool hasManageMessages = await HasPermissionAsync(userId, 4); // ManageMessages = 4
 
             if (!isAuthor && !hasManageMessages) return Forbid();
+
+            DeleteAttachedFiles(message.AttachmentUrls);
 
             _context.Messages.Remove(message);
             await _context.SaveChangesAsync();
@@ -515,6 +718,8 @@ namespace StoryOfTime.Server.Controllers
             bool hasManageMessages = await HasPermissionAsync(userId, 4); 
 
             if (!isAuthor && !hasManageMessages) return Forbid();
+
+            DeleteAttachedFiles(post.AttachmentUrls);
 
             _context.Posts.Remove(post);
             await _context.SaveChangesAsync();
@@ -1005,11 +1210,29 @@ namespace StoryOfTime.Server.Controllers
 
         [Authorize]
         [HttpPost("channels/{channelId}/ack")]
-        public async Task<IActionResult> MarkChannelRead(int channelId)
+        public async Task<IActionResult> MarkChannelRead(int channelId, [FromBody] AckRequest request)
         {
+            Console.WriteLine($"[MarkChannelRead] Request received for Channel {channelId}, LastReadMessageId: {request.LastReadMessageId}");
             var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
                          ?? User.FindFirst("id")?.Value;
             if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
+
+            // Handle TimeZone cross-platform
+            TimeZoneInfo cstZone;
+            try { cstZone = TimeZoneInfo.FindSystemTimeZoneById("China Standard Time"); }
+            catch { try { cstZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Shanghai"); } catch { cstZone = TimeZoneInfo.Utc; } }
+
+            var nowCst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cstZone);
+            
+            // Fix: Fetch channel to ensure we catch up to LastActivityAt regardless of timezone issues
+            var channel = await _context.Channels.FindAsync(channelId);
+            if (channel != null && channel.LastActivityAt > nowCst)
+            {
+                 Console.WriteLine($"[MarkChannelRead] Channel {channelId} LastActivityAt ({channel.LastActivityAt}) is ahead of NowCST ({nowCst}). Adjusting LastReadAt to match.");
+                 nowCst = channel.LastActivityAt;
+            }
+
+            Console.WriteLine($"[MarkChannelRead] User {userId}, Channel {channelId}, Final LastReadAt: {nowCst}");
 
             var state = await _context.UserChannelStates
                 .FirstOrDefaultAsync(ucs => ucs.UserId == userId && ucs.ChannelId == channelId);
@@ -1021,14 +1244,19 @@ namespace StoryOfTime.Server.Controllers
                     UserId = userId,
                     ChannelId = channelId,
                     UnreadMentionCount = 0,
-                    LastReadAt = DateTime.UtcNow
+                    LastReadAt = nowCst,
+                    LastReadMessageId = request.LastReadMessageId
                 };
                 _context.UserChannelStates.Add(state);
             }
             else
             {
                 state.UnreadMentionCount = 0;
-                state.LastReadAt = DateTime.UtcNow;
+                state.LastReadAt = nowCst;
+                if (request.LastReadMessageId > state.LastReadMessageId)
+                {
+                    state.LastReadMessageId = request.LastReadMessageId;
+                }
             }
 
             await _context.SaveChangesAsync();
@@ -1037,11 +1265,25 @@ namespace StoryOfTime.Server.Controllers
 
         [Authorize]
         [HttpPost("posts/{postId}/ack")]
-        public async Task<IActionResult> MarkPostRead(int postId)
+        public async Task<IActionResult> MarkPostRead(int postId, [FromBody] AckRequest request)
         {
             var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
                          ?? User.FindFirst("id")?.Value;
             if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
+
+            // Handle TimeZone cross-platform
+            TimeZoneInfo cstZone;
+            try { cstZone = TimeZoneInfo.FindSystemTimeZoneById("China Standard Time"); }
+            catch { try { cstZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Shanghai"); } catch { cstZone = TimeZoneInfo.Utc; } }
+
+            var nowCst = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cstZone);
+
+            // Fix: Fetch post to ensure we catch up to LastActivityAt
+            var post = await _context.Posts.FindAsync(postId);
+            if (post != null && post.LastActivityAt > nowCst)
+            {
+                nowCst = post.LastActivityAt;
+            }
 
             var state = await _context.UserPostStates
                 .FirstOrDefaultAsync(ups => ups.UserId == userId && ups.PostId == postId);
@@ -1052,16 +1294,60 @@ namespace StoryOfTime.Server.Controllers
                 {
                     UserId = userId,
                     PostId = postId,
-                    LastReadAt = DateTime.UtcNow
+                    LastReadAt = nowCst,
+                    LastReadMessageId = request.LastReadMessageId
                 };
                 _context.UserPostStates.Add(state);
             }
             else
             {
-                state.LastReadAt = DateTime.UtcNow;
+                state.LastReadAt = nowCst;
+                if (request.LastReadMessageId > state.LastReadMessageId)
+                {
+                    state.LastReadMessageId = request.LastReadMessageId;
+                }
             }
 
             await _context.SaveChangesAsync();
+
+            // Check if all posts in the channel are read
+            // Note: post is already fetched above
+            if (post != null)
+            {
+                var channelState = await _context.UserChannelStates
+                    .FirstOrDefaultAsync(ucs => ucs.UserId == userId && ucs.ChannelId == post.ChannelId);
+                
+                var channelLastReadAt = channelState?.LastReadAt ?? DateTime.MinValue;
+
+                // Check for any unread posts in the channel (excluding the one we just read)
+                var unreadPostExists = await _context.Posts
+                    .Where(p => p.ChannelId == post.ChannelId && p.LastActivityAt > channelLastReadAt)
+                    .AnyAsync(p => !_context.UserPostStates.Any(ups => ups.UserId == userId && ups.PostId == p.Id && ups.LastReadAt >= p.LastActivityAt));
+
+                if (!unreadPostExists)
+                {
+                    // Mark Channel as Read
+                     if (channelState == null)
+                    {
+                        channelState = new UserChannelState
+                        {
+                            UserId = userId,
+                            ChannelId = post.ChannelId,
+                            UnreadMentionCount = 0,
+                            LastReadAt = nowCst,
+                            LastReadMessageId = 0
+                        };
+                        _context.UserChannelStates.Add(channelState);
+                    }
+                    else
+                    {
+                        channelState.LastReadAt = nowCst;
+                        channelState.UnreadMentionCount = 0;
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             return Ok();
         }
 
@@ -1148,11 +1434,59 @@ namespace StoryOfTime.Server.Controllers
                 return new List<EmbedData>();
             }
         }
+
+        private void DeleteAttachedFiles(string? attachmentUrlsJson)
+        {
+            if (string.IsNullOrEmpty(attachmentUrlsJson)) return;
+
+            try 
+            {
+                List<string> urls = new List<string>();
+                if (attachmentUrlsJson.TrimStart().StartsWith("["))
+                {
+                    urls = JsonSerializer.Deserialize<List<string>>(attachmentUrlsJson) ?? new List<string>();
+                }
+                else
+                {
+                    urls.Add(attachmentUrlsJson);
+                }
+
+                var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+
+                foreach (var url in urls)
+                {
+                    if (string.IsNullOrWhiteSpace(url)) continue;
+
+                    // url format: /uploads/filename.ext
+                    // We need to remove leading slash and combine
+                    string relativePath = url.TrimStart('/'); 
+                    // Protect against directory traversal if necessary, but Guid filenames are safe usually
+                    if (relativePath.Contains("..")) continue;
+
+                    string filePath = Path.Combine(webRootPath, relativePath);
+
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                        Console.WriteLine($"[DeleteAttachedFiles] Deleted file: {filePath}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DeleteAttachedFiles] Error: {ex.Message}");
+            }
+        }
     }
 
     public class EditMessageDto
     {
         public string Content { get; set; } = string.Empty;
+    }
+
+    public class AckRequest
+    {
+        public int LastReadMessageId { get; set; }
     }
 
     public class CreateChannelDto
@@ -1182,6 +1516,13 @@ namespace StoryOfTime.Server.Controllers
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public List<string>? AttachmentUrls { get; set; }
+    }
+
+    public class CreateMessageDto
+    {
+        public string Content { get; set; } = string.Empty;
+        public List<string>? AttachmentUrls { get; set; }
+        public int? ReplyToId { get; set; }
     }
 
 

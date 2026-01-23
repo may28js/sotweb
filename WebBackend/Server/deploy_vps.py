@@ -86,7 +86,7 @@ def update_nginx_conf(ssh, remote_file_path):
     
     proxy_block = """
         location /community-api/ {
-            proxy_pass http://38.55.125.89:8080/;
+            proxy_pass http://storyoftime-community-backend:8080/;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
@@ -96,10 +96,34 @@ def update_nginx_conf(ssh, remote_file_path):
     """
     
     if 'location /api/' in content:
-        new_content = content.replace('location /api/', f"{proxy_block}\n        location /api/")
+        # Check if /community-api/ already exists to avoid duplication if run multiple times without cleanup
+        if '/community-api/' not in content:
+             content = content.replace('location /api/', f"{proxy_block}\n        location /api/")
     else:
         print("Could not find anchor 'location /api/' in nginx.conf. Appending manually not safe.")
         return
+
+    # Add client_max_body_size
+    if 'client_max_body_size' not in content:
+        # Add to http block or server block. 
+        # Safest is inside the server block, usually at the top.
+        # Let's put it before 'location /' or after 'server_name'.
+        if 'server_name' in content:
+            content = content.replace('server_name', 'client_max_body_size 20M;\n        server_name')
+    
+    # Add /uploads/ location to point to community backend (which has the persistent volume)
+    if 'location /uploads/' not in content:
+        uploads_block = """
+        location /uploads/ {
+            proxy_pass http://storyoftime-community-backend:8080/uploads/;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            expires 30d;
+            add_header Cache-Control "public, no-transform";
+        }
+        """
+        # Insert before /api/
+        content = content.replace('location /api/', f"{uploads_block}\n        location /api/")
 
     temp_file = remote_file_path + ".tmp"
     sftp = ssh.open_sftp()

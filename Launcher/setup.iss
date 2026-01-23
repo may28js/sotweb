@@ -1,9 +1,9 @@
 #define MyAppName "SotLauncher"
-#define MyAppVersion "1.0.4"
+#define MyAppVersion "1.0.5"
 #define MyAppPublisher "StoryOfTime"
 #define MyAppURL "https://shiguanggushi.xyz"
 #define MyAppExeName "SotLauncher.exe"
-#define SourcePath "Host\bin\Release\net9.0-windows\win-x64\publish"
+#define SourcePath "BuildOutput"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -41,8 +41,7 @@ Name: "chinesesimplified"; MessagesFile: "Languages\ChineseSimplified.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-; Source: "{#SourcePath}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#SourcePath}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\cs,\de,\es,\fr,\it,\ja,\ko,\pl,\pt-BR,\ru,\tr,\zh-Hant,*.pdb,*.xml"
+Source: "{#SourcePath}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -55,4 +54,3 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}
 
 ; 静默安装模式：安装结束后直接运行
 Filename: "{app}\{#MyAppExeName}"; Flags: nowait skipifnotsilent
-

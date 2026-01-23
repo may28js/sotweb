@@ -60,6 +60,7 @@ namespace StoryOfTime.Server.Hubs
                     await Clients.All.SendAsync("UserConnected", userId);
                 }
             }
+            await Groups.AddToGroupAsync(Context.ConnectionId, "Global");
             await base.OnConnectedAsync();
         }
 
@@ -291,6 +292,16 @@ namespace StoryOfTime.Server.Hubs
                 embeds = embedsList,
                 replyTo = replyToObj,
                 reactions = new List<object>(),
+                createdAt = message.CreatedAt
+            });
+
+            // Broadcast lightweight notification to Global group (for unread indicators)
+            await Clients.Group("Global").SendAsync("NewMessageNotification", new 
+            {
+                channelId = message.ChannelId,
+                messageId = message.Id,
+                postId = message.PostId,
+                userId = message.UserId,
                 createdAt = message.CreatedAt
             });
 
@@ -585,6 +596,31 @@ namespace StoryOfTime.Server.Hubs
                     .ToListAsync();
                 
                 foreach (var uid in allUserIds) mentionedUserIds.Add(uid);
+            }
+
+            // 1.5 Check for @Role (Admin/Manager only or Mention permission?)
+            // Assuming standard mention permissions or just Admin/Role manage permissions.
+            // For now, let's allow it if user has MentionEveryone (32) or just generally allow it for simplicity as per requirement.
+            // "管理员在某频道内@everyone或@角色" -> implying admin/privileged user.
+            // Let's reuse Permission 32 (MentionEveryone) for Role mentions too, or just check content.
+            if (HasPermission(sender, 32))
+            {
+                var allRoles = await _context.CommunityRoles.ToListAsync();
+                foreach (var role in allRoles)
+                {
+                    if (content.IndexOf("@" + role.Name, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        var roleUserIds = await _context.UserCommunityRoles
+                            .Where(ucr => ucr.CommunityRoleId == role.Id)
+                            .Select(ucr => ucr.UserId)
+                            .ToListAsync();
+                        
+                        foreach (var uid in roleUserIds)
+                        {
+                            if (uid != senderId) mentionedUserIds.Add(uid);
+                        }
+                    }
+                }
             }
             
             // 2. Check for @username - Case Insensitive Matching

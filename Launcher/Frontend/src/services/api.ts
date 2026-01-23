@@ -124,7 +124,7 @@ export const launcherService = {
 
   getStatus: async (): Promise<ServerStatus> => {
     // Disabled as requested by user to remove status display and errors
-    return { status: 'Offline', onlinePlayers: 0, maxPlayers: 1000, uptime: 'N/A' };
+    return { status: 'Offline', onlineCount: 0, maxPlayers: 1000, uptime: 'N/A' };
     /*
     if (ENABLE_MOCK) return { status: 'Online', onlinePlayers: 1234, maxPlayers: 5000, uptime: '1d 2h' };
     try {
@@ -434,8 +434,8 @@ export const api = {
     }
     await delay(500);
     return [
-        { name: "TimeWalker", race: 1, class: 1, level: 80, gender: 0 },
-        { name: "ChronoMage", race: 4, class: 8, level: 60, gender: 1 }
+        { guid: 1, name: "TimeWalker", race: 1, class: 1, level: 80, gender: 0 },
+        { guid: 2, name: "ChronoMage", race: 4, class: 8, level: 60, gender: 1 }
     ];
   },
 

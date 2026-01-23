@@ -53,9 +53,11 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs",
-        policy => policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+        policy => policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "https://shiguanggushi.xyz", "http://shiguanggushi.xyz")
+                        .SetIsOriginAllowed(origin => true) // Allow any origin for now to ensure Launcher connectivity
                         .AllowAnyHeader()
-                        .AllowAnyMethod());
+                        .AllowAnyMethod()
+                        .AllowCredentials());
 });
 
 // Configure DB Context

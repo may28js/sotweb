@@ -16,9 +16,9 @@ namespace StoryOfTime.Server.Controllers
 
         [HttpPost("image")]
         [Authorize] // Only logged-in users can upload
-        public async Task<IActionResult> UploadImage(IFormFile file, [FromQuery] string type = "news")
+        public async Task<IActionResult> UploadImage(IFormFile file, [FromQuery] string type = "news", [FromQuery] bool isSpoiler = false)
         {
-            Console.WriteLine($"[Upload] Received upload request. Type: {type}");
+            Console.WriteLine($"[Upload] Received upload request. Type: {type}, IsSpoiler: {isSpoiler}");
 
             if (file == null || file.Length == 0)
             {
@@ -62,6 +62,13 @@ namespace StoryOfTime.Server.Controllers
 
                 // 3. Generate unique filename
                 var fileName = $"{Guid.NewGuid()}{extension}";
+                
+                // Check for SPOILER prefix (Discord style) or Query Param
+                if (isSpoiler || file.FileName.StartsWith("SPOILER_"))
+                {
+                    fileName = $"SPOILER_{fileName}";
+                }
+
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
                 // 4. Save file

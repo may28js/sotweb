@@ -5,103 +5,50 @@ import {
     MessageSquare, 
     Plus, 
     Search, 
-    Clock, 
-    ChevronLeft,
     Send,
     Smile,
-    Image as ImageIcon,
-    MoreHorizontal,
     Trash2,
     Reply,
-    Share2,
     X,
-    UploadCloud,
-    MoreVertical,
-    Link,
     Bell,
-    Edit,
-    Edit2
+    Edit2,
+    Eye,
+    EyeOff,
+    Link,
+    MoreVertical
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, formatMessageDate, parseColorToRgba } from "../lib/utils";
 import { format } from 'date-fns';
-import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
-import CreatePostModal from './CreatePostModal';
+import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
+import ReplyContext from './ReplyContext';
+// import CreatePostModal from './CreatePostModal';
 import ConfirmationModal from './ConfirmationModal';
-import { HubConnection } from '@microsoft/signalr';
+import { HubConnection, HubConnectionState } from '@microsoft/signalr';
 import { ReactionList, MessageReactionAction, QuickReactionGroup, trackReactionUsage, ActionTooltip } from './ReactionComponents';
 import { type Reaction } from '../types';
+import MessageImages from './MessageImages';
+import { generateLink } from '../lib/links';
+import { MessageContent } from './MessageContent';
+import { AutoResizeTextarea } from './AutoResizeTextarea';
 
 interface ForumListViewProps {
     channel: Channel;
     user: User | null;
     onPostClick: (post: Post) => void;
     connection: HubConnection | null;
+    onChannelReadStatusChange?: (hasUnread: boolean) => void;
 }
 
 interface Attachment {
     id: string;
-    url: string;
-    isUploading: boolean;
+    file: File;
+    previewUrl: string;
+    isSpoiler: boolean;
+    isUploading?: boolean;
 }
 
-const ImageGrid: React.FC<{ images: string[] }> = ({ images }) => {
-    if (!images || images.length === 0) return null;
 
-    const getGridClass = (count: number) => {
-        if (count === 1) return "grid-cols-1 max-w-[60%]";
-        if (count === 2) return "grid-cols-2 max-w-[70%]";
-        // 3 images: Left large square, Right 2 stacked rectangles
-        if (count === 3) return "grid-cols-2 max-w-[70%]"; 
-        if (count === 4) return "grid-cols-2 grid-rows-2 max-w-[70%]";
-        if (count >= 5) return "grid-cols-4 max-w-[80%]"; // 5+ layout
-        return "grid-cols-3 max-w-[70%]";
-    };
-
-    const getImageStyle = (index: number, count: number) => {
-        if (count === 3) {
-            // First image: Left column, full height (span 2 rows implicitly by grid-auto-rows or flex), 
-            // but we are using grid. Let's force grid-rows-2 on the container for 3 items if we want exact control.
-            // Actually, for 3 items in grid-cols-2:
-            // Item 1: row-span-2 -> Left column
-            // Item 2: Right top
-            // Item 3: Right bottom
-            if (index === 0) return "row-span-2 aspect-square h-full";
-            return "aspect-[2/1]"; // Right images are wider (rectangles)
-        }
-        if (count >= 5 && index === 0) return "col-span-4 aspect-video"; // Top large image
-        return "aspect-square";
-    };
-
-    // For 5+ images, we follow "Top 1, Bottom 4" pattern roughly
-    // Or exactly as user requested: 5 images -> 1 top, 4 bottom
-    
-    return (
-        <div className={cn("grid gap-1 mt-3 rounded-lg overflow-hidden", getGridClass(images.length), images.length === 3 && "grid-rows-2")}>
-            {images.map((url, index) => (
-                <div 
-                    key={index} 
-                    className={cn(
-                        "relative bg-[#2b2d31] overflow-hidden cursor-zoom-in",
-                        getImageStyle(index, images.length)
-                    )}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(url, '_blank');
-                    }}
-                >
-                    <img 
-                        src={url} 
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
-                        alt={`attachment-${index}`} 
-                        loading="lazy"
-                    />
-                </div>
-            ))}
-        </div>
-    );
-};
-
-export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onPostClick, connection }) => {
+export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onPostClick, connection, onChannelReadStatusChange }) => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -117,6 +64,25 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
     useEffect(() => {
         fetchPosts();
     }, [channel.id]);
+
+    useEffect(() => {
+        // Discord-style Logic: Entering the channel marks it as read immediately
+        if (channel.hasUnread) {
+            console.log(`[ForumListView] Entering channel ${channel.id}, marking as read...`);
+            
+            // Mark channel as read locally immediately for UI responsiveness
+            if (onChannelReadStatusChange) {
+                onChannelReadStatusChange(false);
+            }
+
+            // Sync with backend
+            // Use 2147483647 (Max Int) to ensure we cover all messages/posts in terms of ID sequence if needed, 
+            // though for channels it's mostly about LastReadAt time.
+            api.post(`/Community/channels/${channel.id}/ack`, { lastReadMessageId: 0 })
+                .then(() => console.log('[ForumListView] Channel read status acked'))
+                .catch(err => console.error("Failed to ack channel read status", err));
+        }
+    }, [channel.id]); // Only run when entering a new channel (or if channel ID changes)
 
     useEffect(() => {
         if (!connection) return;
@@ -135,9 +101,9 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
                 const post = prev[index];
                 const updatedPost = {
                     ...post,
-                    messageCount: post.messageCount + 1,
+                    messageCount: (post.messageCount || 0) + 1,
                     lastActivityAt: msg.createdAt,
-                    isUnread: user?.id !== msg.userId
+                    hasUnread: user?.id !== msg.userId
                 };
 
                 const newPosts = [...prev];
@@ -168,69 +134,39 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
         }
     };
 
-    const handleFileUpload = async (files: FileList | null) => {
+    const handleFileUpload = (files: FileList | null) => {
         if (!files || files.length === 0) return;
         
-        setIsGlobalUploading(true);
         const newAttachments: Attachment[] = [];
-        const filesToUpload: File[] = [];
 
-        // 1. Create local previews
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             if (!file.type.startsWith('image/')) continue;
             
-            // Check size (e.g. 10MB)
             if (file.size > 10 * 1024 * 1024) {
                 alert(`图片 ${file.name} 超过 10MB 限制`);
                 continue;
             }
 
             const id = Math.random().toString(36).substring(7);
-            const localUrl = URL.createObjectURL(file);
+            const previewUrl = URL.createObjectURL(file);
             
             newAttachments.push({
                 id,
-                url: localUrl,
-                isUploading: true
+                file,
+                previewUrl,
+                isSpoiler: false
             });
-            filesToUpload.push(file);
-        }
-
-        if (newAttachments.length === 0) {
-            setIsGlobalUploading(false);
-            return;
         }
 
         setAttachments(prev => [...prev, ...newAttachments]);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
 
-        // 2. Upload individually
-        try {
-            await Promise.all(filesToUpload.map(async (file, index) => {
-                const attachment = newAttachments[index];
-                const formData = new FormData();
-                formData.append('file', file);
-
-                try {
-                    const res = await api.post('/Upload/image?type=community', formData, {
-                        headers: { 'Content-Type': 'multipart/form-data' }
-                    });
-                    
-                    setAttachments(prev => prev.map(a => 
-                        a.id === attachment.id 
-                            ? { ...a, url: res.data.url, isUploading: false }
-                            : a
-                    ));
-                } catch (err) {
-                    console.error(`Failed to upload ${file.name}`, err);
-                    // Mark as error or remove? For now, remove
-                    setAttachments(prev => prev.filter(a => a.id !== attachment.id));
-                    alert(`图片 ${file.name} 上传失败`);
-                }
-            }));
-        } finally {
-            setIsGlobalUploading(false);
-        }
+    const toggleSpoiler = (id: string) => {
+        setAttachments(prev => prev.map(a => 
+            a.id === id ? { ...a, isSpoiler: !a.isSpoiler } : a
+        ));
     };
 
     const handlePaste = (e: React.ClipboardEvent) => {
@@ -251,17 +187,23 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
     const handleCreatePost = async () => {
         if (!newPostTitle.trim() || !newPostContent.trim()) return;
         
-        // Ensure no images are still uploading
-        if (attachments.some(a => a.isUploading)) {
-            alert("请等待图片上传完成");
-            return;
-        }
-
+        setIsGlobalUploading(true);
         try {
+            // Upload files first
+            const uploadedUrls = await Promise.all(attachments.map(async (att) => {
+                const formData = new FormData();
+                formData.append('file', att.file);
+                
+                const res = await api.post(`/Upload/image?type=community&isSpoiler=${att.isSpoiler}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                return res.data.url;
+            }));
+
             await api.post(`/Community/channels/${channel.id}/posts`, {
                 title: newPostTitle,
                 content: newPostContent,
-                attachmentUrls: attachments.map(a => a.url)
+                attachmentUrls: uploadedUrls
             });
             
             // Reset form
@@ -269,10 +211,11 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
             setNewPostContent('');
             setAttachments([]);
             setIsCreating(false);
-            // Post will be added via SignalR
         } catch (err) {
             console.error("Failed to create post", err);
             alert("发帖失败");
+        } finally {
+            setIsGlobalUploading(false);
         }
     };
 
@@ -353,12 +296,12 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
                                 
                                 {/* Content Input */}
                                 <div className="mb-4">
-                                    <textarea
+                                    <AutoResizeTextarea
                                         value={newPostContent}
                                         onChange={(e) => setNewPostContent(e.target.value)}
                                         onPaste={handlePaste}
                                         placeholder="输入消息......"
-                                        className="w-full bg-transparent text-[#DBDEE1] placeholder-[#949BA4] outline-none min-h-[150px] resize-none px-1 custom-scrollbar"
+                                        className="min-h-[150px] px-1"
                                     />
                                 </div>
 
@@ -368,33 +311,49 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
                                         {attachments.map((attachment) => (
                                             <div key={attachment.id} className="relative group w-[80px] h-[80px] bg-[#2f3136] rounded-md overflow-hidden shrink-0">
                                                 <img 
-                                                    src={attachment.url} 
-                                                    className={cn("w-full h-full object-cover transition-opacity", attachment.isUploading ? "opacity-50" : "")} 
+                                                    src={attachment.previewUrl} 
+                                                    className={cn(
+                                                        "w-full h-full object-cover transition-all", 
+                                                        attachment.isSpoiler ? "blur-sm brightness-50" : ""
+                                                    )} 
                                                     alt="attachment" 
                                                 />
                                                 
-                                                {/* Uploading Overlay */}
-                                                {attachment.isUploading && (
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                {/* Spoiler Label */}
+                                                {attachment.isSpoiler && (
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                        <span className="text-[10px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded">SPOILER</span>
                                                     </div>
                                                 )}
 
-                                                {/* Delete Button (Hover on Image) */}
-                                                {!attachment.isUploading && (
-                                                    <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                                        <div 
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setAttachments(prev => prev.filter(a => a.id !== attachment.id));
-                                                            }}
-                                                            className="bg-[#ED4245] text-white rounded-full p-0.5 shadow-sm"
-                                                            title="删除图片"
-                                                        >
-                                                            <X size={12} />
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                {/* Action Buttons (Hover) */}
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-start justify-end p-1 gap-1">
+                                                     <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleSpoiler(attachment.id);
+                                                        }}
+                                                        className={cn(
+                                                            "p-1 rounded shadow-sm transition-colors",
+                                                            attachment.isSpoiler 
+                                                                ? "bg-[#5865F2] text-white" 
+                                                                : "bg-[#2B2D31] text-[#B5BAC1] hover:text-white"
+                                                        )}
+                                                        title={attachment.isSpoiler ? "取消剧透" : "标记为剧透"}
+                                                    >
+                                                        {attachment.isSpoiler ? <EyeOff size={14} /> : <Eye size={14} />}
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setAttachments(prev => prev.filter(a => a.id !== attachment.id));
+                                                        }}
+                                                        className="bg-[#ED4245] text-white rounded p-1 shadow-sm hover:bg-[#c03537] transition-colors"
+                                                        title="删除图片"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                         
@@ -437,12 +396,10 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
                                         {/* Upload Icon Button */}
                                          <button 
                                             onClick={() => fileInputRef.current?.click()}
-                                            className="text-[#949BA4] hover:text-[#DBDEE1] transition-colors"
+                                            className="text-[#B5BAC1] p-1 h-8 flex items-center group cursor-pointer"
                                             title="上传文件"
                                         >
-                                            <div className="border border-[#949BA4] hover:border-[#DBDEE1] rounded p-0.5">
-                                                <Plus size={14} />
-                                            </div>
+                                            <Plus size={24} className="bg-[#B5BAC1] text-[#383a40] rounded-full p-0.5 transition-all duration-200 group-hover:bg-[#D1D5D9] group-hover:text-black group-hover:scale-110" />
                                         </button>
                                         
                                         {/* Post Button */}
@@ -473,7 +430,11 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
                     ) : (
                         <div className="space-y-6">
                             {filteredPosts.map(post => {
-                                const hasImage = post.attachmentUrls && post.attachmentUrls.length > 0;
+                                const images = [
+                                    ...(post.embeds?.filter(e => e.type === 'photo').map(e => e.url) || []),
+                                    ...(post.attachmentUrls || [])
+                                ];
+                                const hasImage = images.length > 0;
                                 return (
                                 <div 
                                     key={post.id}
@@ -483,7 +444,7 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
                                     {hasImage && (
                                         <div className="w-[220px] shrink-0 bg-[#2b2d31] relative border-r border-[#26272D]">
                                             <img 
-                                                src={post.attachmentUrls[0]} 
+                                                src={getAvatarUrl(images[0])} 
                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                                 alt="thumbnail"
                                             />
@@ -504,7 +465,12 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
                                             {/* Top Row: Title + Time */}
                                             <div className="flex justify-between items-start mb-2">
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="text-[#DBDEE1] font-bold text-lg group-hover:text-blue-400 transition-colors line-clamp-1">{post.title}</h3>
+                                                    <h3 className={cn(
+                                                        "font-bold text-lg transition-colors line-clamp-1",
+                                                        post.hasUnread ? "text-white" : "text-[#949BA4] group-hover:text-[#DBDEE1]"
+                                                    )}>
+                                                        {post.title}
+                                                    </h3>
                                                 </div>
                                                 <span className="text-xs text-[#949BA4] shrink-0 pt-1">
                                                     {format(new Date(post.lastActivityAt), 'HH:mm')}
@@ -520,11 +486,11 @@ export const ForumListView: React.FC<ForumListViewProps> = ({ channel, user, onP
                                             <div className="flex items-center justify-between text-xs text-[#949BA4] mt-3">
                                                 <div className="flex items-center gap-2">
                                                     <img 
-                                                        src={getAvatarUrl(post.author.avatarUrl)} 
+                                                        src={getAvatarUrl(post.author?.avatarUrl)} 
                                                         className="w-4 h-4 rounded-full" 
                                                     />
-                                                    <span style={{ color: post.author.roleColor || '#949BA4' }} className="font-medium">
-                                                        {post.author.nickname || post.author.username}
+                                                    <span style={{ color: post.author?.roleColor || '#949BA4' }} className="font-medium">
+                                                        {post.author?.nickname || post.author?.username}
                                                     </span>
                                                     <span>•</span>
                                                     <span>发布于 {format(new Date(post.createdAt), 'MM/dd')}</span>
@@ -556,21 +522,29 @@ interface PostThreadViewProps {
     connection: HubConnection | null;
     members?: Member[];
     roles?: CommunityRole[];
+    onAck?: (lastReadMessageId: number) => void;
 }
 
-export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, user, onBack, connection, members = [], roles = [] }) => {
+export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, user, onBack, connection, members = [], roles = [], onAck }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
-    // const [showEmojiPicker, setShowEmojiPicker] = useState(false); // Removed as ReactionList handles it internally or we use new logic
-    const [postReactions, setPostReactions] = useState<Reaction[]>(post.reactions || []);
+    const [postReactions, setPostReactions] = useState<Reaction[]>([]); // post.reactions || []
     const [inputText, setInputText] = useState('');
     const [replyTo, setReplyTo] = useState<Message | null>(null);
     const [deletingMessage, setDeletingMessage] = useState<Message | null>(null);
     const [isDeletingPost, setIsDeletingPost] = useState(false);
     const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+    
+    // Upload & Emoji State
+    const [pendingFiles, setPendingFiles] = useState<{ file: File, previewUrl: string, isSpoiler: boolean }[]>([]);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const emojiPickerRef = useRef<HTMLDivElement>(null);
+    const emojiButtonRef = useRef<HTMLButtonElement>(null);
 
     // Permission Helper
     const canManageMessage = (targetUserId: number) => {
@@ -584,7 +558,7 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
         const currentMember = members.find(m => m.id === user.id);
         if (!currentMember) return false;
 
-        for (const roleId of currentMember.roles) {
+        for (const roleId of (currentMember.roles || [])) {
             const role = roles.find(r => r.id === roleId);
             if (role) {
                 if ((role.permissions & 4) === 4) return true;
@@ -595,11 +569,46 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
         return false;
     };
 
+    // Track the initial read state to render the "New Messages" divider correctly
+    // We only want to set this once when entering the thread
+    const [initialReadMessageId] = useState(post.lastReadMessageId || 0);
+    const lastAckedIdRef = useRef(post.lastReadMessageId || 0);
+
     useEffect(() => {
         fetchMessages();
-        // Mark as read
-        api.post(`/Community/posts/${post.id}/ack`).catch(console.error);
     }, [post.id]);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        // Check if we are near bottom (within 100px)
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        
+        if (isNearBottom && messages.length > 0) {
+            const latestMessage = messages[messages.length - 1];
+            if (latestMessage.id > lastAckedIdRef.current) {
+                lastAckedIdRef.current = latestMessage.id;
+                api.post(`/Community/posts/${post.id}/ack`, { lastReadMessageId: latestMessage.id })
+                    .then(() => onAck?.(latestMessage.id))
+                    .catch(console.error);
+            }
+        }
+    };
+
+    // Auto-ack if content fits on screen (no scroll)
+    useEffect(() => {
+        if (!isLoading && messages.length > 0) {
+             const container = document.getElementById('post-thread-container');
+             if (container && container.scrollHeight <= container.clientHeight) {
+                 const latestMessage = messages[messages.length - 1];
+                 if (latestMessage.id > lastAckedIdRef.current) {
+                    lastAckedIdRef.current = latestMessage.id;
+                    api.post(`/Community/posts/${post.id}/ack`, { lastReadMessageId: latestMessage.id })
+                        .then(() => onAck?.(latestMessage.id))
+                        .catch(console.error);
+                 }
+             }
+        }
+    }, [messages, isLoading, post.id]);
 
     useEffect(() => {
         if (!connection) return;
@@ -618,7 +627,7 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
             if (postId === post.id) {
                 setPostReactions(prev => {
                     if (prev.some(r => r.userId === userId && r.emoji === emoji)) return prev;
-                    return [...prev, { postId, userId, emoji }];
+                    return [...prev, { postId, userId, emoji, messageId: 0 }];
                 });
             }
         };
@@ -666,6 +675,20 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
 
     const prevMessagesLength = useRef(0);
 
+    const handleScrollToMessage = (messageId: number) => {
+        // In forum view, messages might not have unique IDs in DOM if not carefully managed
+        // But we can try to find by ID
+        // The messages in PostThreadView should have unique IDs
+        const element = document.getElementById(`forum-message-${messageId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+             element.classList.add('bg-[#3f4147]', 'animate-pulse');
+            setTimeout(() => {
+                element.classList.remove('bg-[#3f4147]', 'animate-pulse');
+            }, 2000);
+        }
+    };
+
     useEffect(() => {
         if (isLoading || messages.length > prevMessagesLength.current) {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -685,21 +708,195 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
         }
     };
 
+    const handleUpload = (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            alert("只能上传图片文件");
+            return;
+        }
+        
+        const previewUrl = URL.createObjectURL(file);
+        setPendingFiles(prev => [...prev, { file, previewUrl, isSpoiler: false }]);
+    };
+
+    const toggleSpoiler = (index: number) => {
+        setPendingFiles(prev => prev.map((item, i) => 
+            i === index ? { ...item, isSpoiler: !item.isSpoiler } : item
+        ));
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            handleUpload(e.target.files[0]);
+        }
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handlePaste = (e: React.ClipboardEvent) => {
+        const items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf("image") !== -1) {
+                const file = items[i].getAsFile();
+                if (file) handleUpload(file);
+            }
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleUpload(e.dataTransfer.files[0]);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const removeAttachment = (index: number) => {
+        setPendingFiles(prev => {
+            const newFiles = [...prev];
+            URL.revokeObjectURL(newFiles[index].previewUrl);
+            newFiles.splice(index, 1);
+            return newFiles;
+        });
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                emojiPickerRef.current &&
+                !emojiPickerRef.current.contains(event.target as Node) &&
+                emojiButtonRef.current &&
+                !emojiButtonRef.current.contains(event.target as Node)
+            ) {
+                setShowEmojiPicker(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!inputText.trim() || !connection) return;
+        if ((!inputText.trim() && pendingFiles.length === 0) || !connection || !user) return;
 
         if (editingMessageId) {
             await handleEditMessage(inputText.trim());
             return;
         }
 
+        const content = inputText.trim();
+        const filesToUpload = [...pendingFiles];
+        const tempId = Date.now();
+
+        // Clear input immediately (Optimistic UI)
+        setInputText('');
+        setPendingFiles([]);
+        setReplyTo(null);
+
+        const optimisticMessage: Message = {
+            id: tempId,
+            channelId: channel.id,
+            userId: user.id,
+            content: content,
+            createdAt: new Date().toISOString(),
+            user: {
+                id: user.id,
+                username: user.username,
+                nickname: user.nickname,
+                avatarUrl: user.avatarUrl,
+                accessLevel: user.accessLevel || 0,
+                points: user.points || 0
+            },
+            isSending: true,
+            postId: post.id,
+            replyTo: replyTo || undefined,
+            pendingFiles: filesToUpload.map(f => ({
+                file: f.file,
+                previewUrl: f.previewUrl,
+                progress: 0,
+                status: 'pending'
+            }))
+        };
+
+        setMessages(prev => [...prev, optimisticMessage]);
+
+        // Background Upload & Send
         try {
-            await connection.invoke("SendMessage", channel.id.toString(), inputText, replyTo?.id || null, null, post.id);
-            setInputText('');
-            setReplyTo(null);
+            let uploadedUrls: string[] = [];
+            
+            if (filesToUpload.length > 0) {
+                 // Update status to uploading
+                setMessages(prev => prev.map(m => {
+                     if (m.id === tempId && m.pendingFiles) {
+                         return {
+                             ...m,
+                             pendingFiles: m.pendingFiles.map(pf => ({ ...pf, status: 'uploading' }))
+                         };
+                     }
+                     return m;
+                }));
+
+                // Parallel Upload
+                const uploadPromises = filesToUpload.map(async (item, index) => {
+                    const formData = new FormData();
+                    formData.append('file', item.file);
+                    
+                    try {
+                        const res = await api.post(`/Upload/image?type=community&isSpoiler=${item.isSpoiler}`, formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        
+                        // Update progress (done)
+                        setMessages(prev => prev.map(m => {
+                            if (m.id === tempId && m.pendingFiles) {
+                                const newPending = [...m.pendingFiles];
+                                newPending[index] = { ...newPending[index], status: 'done', progress: 100 };
+                                return { ...m, pendingFiles: newPending };
+                            }
+                            return m;
+                        }));
+
+                        return res.data.url;
+                    } catch (err) {
+                        console.error("Single file upload failed", err);
+                         setMessages(prev => prev.map(m => {
+                            if (m.id === tempId && m.pendingFiles) {
+                                const newPending = [...m.pendingFiles];
+                                newPending[index] = { ...newPending[index], status: 'error' };
+                                return { ...m, pendingFiles: newPending };
+                            }
+                            return m;
+                        }));
+                        throw err;
+                    }
+                });
+
+                uploadedUrls = await Promise.all(uploadPromises);
+            }
+
+            // Send via SignalR
+            if (connection.state === HubConnectionState.Connected) {
+                const attachmentUrlsJson = uploadedUrls.length > 0 ? JSON.stringify(uploadedUrls) : null;
+                await connection.invoke("SendMessage", 
+                    channel.id.toString(), 
+                    content, 
+                    replyTo?.id || null, 
+                    attachmentUrlsJson, 
+                    post.id
+                );
+                
+                // Remove optimistic message to avoid duplication when real message arrives
+                setMessages(prev => prev.filter(m => m.id !== tempId));
+            } else {
+                throw new Error("Not connected to server");
+            }
         } catch (err) {
             console.error("Failed to send message", err);
+            setMessages(prev => prev.map(m => m.id === tempId ? { ...m, isSending: false, isError: true } : m));
         }
     };
 
@@ -763,8 +960,9 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
         inputRef.current?.focus();
     };
 
-    const handleShare = (content: string) => {
-        navigator.clipboard.writeText(content);
+    const handleShare = () => {
+        const link = generateLink('post', post.id);
+        navigator.clipboard.writeText(link);
     };
 
     const handleTogglePostReaction = async (emoji: string) => {
@@ -793,9 +991,9 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
         
         try {
             if (hasReacted) {
-                await connection.invoke("RemoveMessageReaction", messageId, emoji);
+                await connection.invoke("RemoveReaction", messageId, emoji);
             } else {
-                await connection.invoke("AddMessageReaction", messageId, emoji);
+                await connection.invoke("AddReaction", messageId, emoji);
                 trackReactionUsage(emoji);
             }
         } catch (err) {
@@ -803,7 +1001,7 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
         }
     };
 
-    const canDeletePost = canManageMessage(post.author.id);
+    const canDeletePost = canManageMessage(post.author?.id || 0);
 
     return (
         <div className="flex-1 flex flex-col h-full bg-[#313338] relative">
@@ -820,7 +1018,11 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
             </div>
 
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar overflow-x-hidden">
+            <div 
+                id="post-thread-container"
+                className="flex-1 overflow-y-auto custom-scrollbar overflow-x-hidden"
+                onScroll={handleScroll}
+            >
                 <div className="max-w-[1000px] mx-auto w-full px-6 pb-4">
                     {/* Main Header with Title */}
                     <div className="py-4 flex items-start justify-between gap-4">
@@ -840,11 +1042,11 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
 
                     {/* Date Separator */}
                     <div className="flex items-center gap-4 my-2 select-none">
-                        <div className="h-[1px] flex-1 bg-[#3F4147]"></div>
-                        <span className="text-xs text-[#949BA4] font-medium">
+                        <div className={cn("h-[1px] flex-1 transition-colors", post.hasUnread ? "bg-red-500" : "bg-[#3F4147]")}></div>
+                        <span className={cn("text-xs font-medium transition-colors", post.hasUnread ? "text-red-500" : "text-[#949BA4]")}>
                             {format(new Date(post.createdAt), 'yyyy年MM月dd日')}
                         </span>
-                        <div className="h-[1px] flex-1 bg-[#3F4147]"></div>
+                        <div className={cn("h-[1px] flex-1 transition-colors", post.hasUnread ? "bg-red-500" : "bg-[#3F4147]")}></div>
                     </div>
 
                     {/* OP Post Content */}
@@ -854,21 +1056,21 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                             <div className="flex items-center gap-3">
                                 <div className="relative">
                                     <img 
-                                        src={getAvatarUrl(post.author.avatarUrl)} 
+                                        src={getAvatarUrl(post.author?.avatarUrl)} 
                                         className="w-10 h-10 rounded-full border-2 border-[#FFD700]" 
                                         alt="avatar"
                                     />
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-bold text-[#F23F42] hover:underline cursor-pointer">
-                                        {post.author.nickname || post.author.username}
+                                        {post.author?.nickname || post.author?.username}
                                     </span>
                                     <span className="text-[#949BA4] text-sm">
-                                        @{post.author.username}
+                                        @{post.author?.username}
                                     </span>
                                     <span className="bg-[#5865F2] text-white text-[10px] px-1 rounded font-bold">LZ</span>
                                     <span className="text-[#949BA4] text-xs ml-1">
-                                        {format(new Date(post.createdAt), 'yyyy/MM/dd HH:mm')}
+                                        {formatMessageDate(post.createdAt)}
                                     </span>
                                 </div>
                             </div>
@@ -890,7 +1092,7 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                                                 onClick={() => { setShowMenu(false); /* TODO: Implement Edit */ }} 
                                                 className="flex items-center gap-2 px-3 py-2 text-sm text-[#949BA4] hover:bg-[#404249] hover:text-[#DBDEE1] w-full text-left transition-colors"
                                             >
-                                                <Edit size={14} />
+                                                <Edit2 size={14} />
                                                 <span>编辑</span>
                                             </button>
                                             <button 
@@ -907,13 +1109,16 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                         </div>
 
                         {/* Post Text */}
-                        <div className="pl-[52px] text-[#DBDEE1] whitespace-pre-wrap break-words leading-relaxed text-[13px]">
+                        <div className="pl-[52px] text-[#DBDEE1] whitespace-pre-wrap break-words leading-relaxed text-[14px]">
                             {post.content}
                         </div>
 
                         {/* Images */}
-                        <div className="pl-[52px] mt-3">
-                            <ImageGrid images={post.attachmentUrls} />
+                        <div className="pl-[52px] mt-1">
+                            <MessageImages images={[
+                                ...(post.embeds?.filter(e => e.type === 'photo').map(e => e.url) || []),
+                                ...(post.attachmentUrls || [])
+                            ]} />
                         </div>
 
                         {/* Bottom Actions Row */}
@@ -934,7 +1139,7 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                                 </ActionTooltip>
                                 <ActionTooltip text="复制链接">
                                     <button 
-                                        onClick={() => handleShare(post.content)}
+                                        onClick={handleShare}
                                         className="p-1.5 bg-[#2B2D31] hover:bg-[#3F4147] rounded text-[#949BA4] hover:text-white transition-colors"
                                     >
                                         <Link size={16} />
@@ -951,15 +1156,118 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                     <div className="pb-4">
                         {messages.map((msg, index) => {
                              const isSequent = index > 0 && messages[index - 1].userId === msg.userId && 
-                                (new Date(msg.createdAt).getTime() - new Date(messages[index - 1].createdAt).getTime() < 5 * 60 * 1000);
+                                (new Date(msg.createdAt).getTime() - new Date(messages[index - 1].createdAt).getTime() < 5 * 60 * 1000) && !msg.replyTo;
                              const canManage = canManageMessage(msg.userId);
 
+                             // Check if mentioned or replied to
+                             // const currentMember = members.find(m => m.id === user?.id);
+                             
+                             // Determine Mention Type and Color
+                             let mentionColor: string | null = null;
+                             let isMentioned = false;
+
+                             // 1. Check for Role Mentions (Priority: Role Color > Everyone Yellow)
+                             if (roles) {
+                                 for (const role of roles) {
+                                     if (msg.content.toLowerCase().includes(`@${role.name.toLowerCase()}`)) {
+                                         if (role.color !== null && role.color !== undefined) {
+                                             const parsedColor = parseColorToRgba(role.color, 1);
+                                             if (parsedColor) {
+                                                 mentionColor = parsedColor;
+                                                 isMentioned = true;
+                                                 break;
+                                             }
+                                         }
+                                     }
+                                 }
+                             }
+
+                             // 2. Check for @everyone
+                             if (!isMentioned && msg.content.includes('@everyone')) {
+                                 isMentioned = true;
+                                 mentionColor = '#faa61a';
+                             }
+
+                             // 3. Check for Direct Mention
+                             if (!isMentioned && user) {
+                                 const isDirect = (
+                                     (msg.replyTo?.userId === user.id) || 
+                                     msg.content.toLowerCase().includes(`@${user.username.toLowerCase()}`) || 
+                                     (user.nickname && msg.content.toLowerCase().includes(`@${user.nickname.toLowerCase()}`))
+                                 );
+                                 if (isDirect) {
+                                     isMentioned = true;
+                                     mentionColor = '#faa61a';
+                                 }
+                             }
+
+                             const mentionBgColor = mentionColor 
+                                 ? parseColorToRgba(mentionColor, 0.1) 
+                                 : null;
+                             
+                             const mentionHoverBgColor = mentionColor
+                                 ? parseColorToRgba(mentionColor, 0.15) 
+                                 : null;
+
+                             const isNewMessageDivider = initialReadMessageId > 0 && 
+                                msg.id > initialReadMessageId && 
+                                (index === 0 || messages[index - 1].id <= initialReadMessageId) &&
+                                msg.userId !== user?.id;
+
                              return (
-                                <div key={msg.id} className={cn("group flex gap-4 hover:bg-[#2e3035]/40 -mx-6 px-6 py-2 relative", isSequent ? "mt-0.5" : "mt-6")}>
-                                    <div className="shrink-0 w-10">
+                                <React.Fragment key={msg.id}>
+                                    {isNewMessageDivider && (
+                                        <div className="flex items-center my-4 mx-4 select-none">
+                                            <div className="h-[1px] bg-red-500 flex-1 opacity-50" />
+                                            <span className="mx-2 text-xs font-bold text-red-500 uppercase flex items-center gap-1">
+                                                新消息
+                                            </span>
+                                            <div className="h-[1px] bg-red-500 flex-1 opacity-50" />
+                                        </div>
+                                    )}
+                                    <div 
+                                        id={`forum-message-${msg.id}`}
+                                        className={cn(
+                                            "group -mx-6 px-6 py-0.5 relative hover:bg-[#2e3035]/40", 
+                                        isSequent ? "mt-0.5" : "mt-6"
+                                    )}
+                                    style={isMentioned && mentionBgColor ? {
+                                        backgroundColor: mentionBgColor
+                                    } : undefined}
+                                    onMouseEnter={(e) => {
+                                        if (isMentioned && mentionHoverBgColor) {
+                                            e.currentTarget.style.backgroundColor = mentionHoverBgColor;
+                                        } else {
+                                            e.currentTarget.style.backgroundColor = 'rgba(46, 48, 53, 0.4)'; // #2e3035 with 0.4 opacity
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (isMentioned && mentionBgColor) {
+                                            e.currentTarget.style.backgroundColor = mentionBgColor;
+                                        } else {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                        }
+                                    }}
+                                >
+                                    {/* Dynamic Left Border Indicator */}
+                                    {isMentioned && mentionColor && (
+                                        <div 
+                                            className="absolute left-0 top-0 bottom-0 w-[2px]" 
+                                            style={{ backgroundColor: mentionColor }}
+                                        />
+                                    )}
+                                    {msg.replyTo && (
+                                        <div className="flex items-center ml-[52px] mb-1 relative">
+                                            <div className="absolute -left-[36px] top-1/2 w-[34px] h-[12px] border-t-2 border-l-2 border-[#4f545c] rounded-tl-[6px] border-b-0 border-r-0 mb-[-2px] mr-2" />
+                                            <ReplyContext replyTo={msg.replyTo} onClick={handleScrollToMessage} />
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-4 relative">
+                                        <div className="shrink-0 w-10 z-10">
                                         {!isSequent ? (
                                             <img 
-                                                src={getAvatarUrl(msg.user?.avatarUrl || msg.avatarUrl)} 
+                                                src={getAvatarUrl(msg.user?.avatarUrl)} 
                                                 className="w-10 h-10 rounded-full cursor-pointer hover:opacity-80 transition-opacity" 
                                             />
                                         ) : (
@@ -969,35 +1277,62 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                                         )}
                                     </div>
                                     
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0 z-10">
                                         {!isSequent && (
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span 
                                                     className="font-medium text-white hover:underline cursor-pointer"
-                                                    style={{ color: msg.roleColor || msg.user?.roleColor }}
+                                                    style={{ color: msg.user?.roleColor }}
                                                 >
-                                                    {msg.user?.nickname || msg.nickname || msg.username || msg.user?.username}
+                                                    {msg.user?.nickname || msg.user?.username}
                                                 </span>
-                                                {msg.userId === post.author.id && (
+                                                {msg.userId === post.author?.id && (
                                                     <span className="bg-[#5865F2] text-white text-[10px] px-1 rounded font-bold">LZ</span>
                                                 )}
                                                 <span className="text-xs text-[#949BA4]">
-                                                    {format(new Date(msg.createdAt), 'yyyy/MM/dd HH:mm')}
+                                                    {formatMessageDate(msg.createdAt)}
                                                 </span>
                                             </div>
                                         )}
                                         
-                                        {msg.replyTo && (
-                                            <div className="flex items-center gap-2 mt-0.5 mb-1 text-xs text-gray-400 bg-[#2f3136]/50 p-1 rounded border-l-2 border-[#4e5058] opacity-80 inline-flex">
-                                                <Reply size={12} />
-                                                <span className="font-bold">{msg.replyTo.nickname || msg.replyTo.username}</span>
-                                                <span className="truncate max-w-[200px] opacity-75">{msg.replyTo.content}</span>
+                                        <div className={cn("text-[#DBDEE1] whitespace-pre-wrap break-words leading-relaxed text-[14px]", !isSequent && "")}>
+                                            <MessageContent content={msg.content} roles={roles} />
+                                        </div>
+                                        
+                                        {/* Images */}
+                                        <MessageImages 
+                                            images={msg.attachmentUrls || []} 
+                                            onImageLoad={() => {
+                                                if (index === messages.length - 1) {
+                                                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                                                }
+                                            }}
+                                        />
+                                        
+                                        {/* Pending Files (Optimistic UI) */}
+                                        {msg.pendingFiles && msg.pendingFiles.length > 0 && (
+                                            <div className="mt-2 space-y-2 max-w-[400px]">
+                                                {msg.pendingFiles.map((file, i) => (
+                                                    <div key={i} className="bg-[#2b2d31] rounded p-2 flex items-center gap-3 border border-[#26272D]">
+                                                        <div className="w-10 h-10 bg-[#1e1f22] rounded overflow-hidden shrink-0">
+                                                            <img src={file.previewUrl} alt="preview" className="w-full h-full object-cover opacity-50" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between text-xs text-gray-300 mb-1">
+                                                                <span className="truncate">{file.file.name}</span>
+                                                                <span>{file.status === 'error' ? '失败' : (file.status === 'done' ? '完成' : '上传中...')}</span>
+                                                            </div>
+                                                            <div className="h-1 bg-[#1e1f22] rounded-full overflow-hidden">
+                                                                <div 
+                                                                    className={cn("h-full transition-all duration-300", file.status === 'error' ? "bg-red-500" : "bg-blue-500")}
+                                                                    style={{ width: file.status === 'done' ? '100%' : (file.status === 'uploading' ? '50%' : '0%') }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )}
-
-                                        <p className={cn("text-[#DBDEE1] whitespace-pre-wrap break-words leading-relaxed text-[13px]", !isSequent && "")}>
-                                            {msg.content}
-                                        </p>
                                         
                                         <ReactionList 
                                             reactions={msg.reactions || []}
@@ -1016,6 +1351,17 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                                                 <Reply size={20} />
                                             </button>
                                         </ActionTooltip>
+                                        <ActionTooltip text="复制链接">
+                                            <button 
+                                                onClick={() => {
+                                                    const link = generateLink('post', post.id, msg.id);
+                                                    navigator.clipboard.writeText(link);
+                                                }}
+                                                className="w-8 h-8 flex items-center justify-center hover:bg-[#404249] rounded transition-colors text-gray-400 hover:text-white"
+                                            >
+                                                <Link size={20} />
+                                            </button>
+                                        </ActionTooltip>
                                         {canManage && (
                                             <>
                                                 <ActionTooltip text="编辑">
@@ -1031,7 +1377,9 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                                             </>
                                         )}
                                     </div>
+                                    </div>
                                 </div>
+                            </React.Fragment>
                              );
                         })}
                     </div>
@@ -1042,14 +1390,78 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
             {/* Bottom Reply Bar */}
             <div className="bg-[#313338] shrink-0 border-t border-[#26272D]">
                 <div className="max-w-[1000px] mx-auto w-full p-4">
-                    <div className="bg-[#383A40] rounded-lg p-2 flex items-center gap-2 shadow-inner">
-                        <button className="text-[#B5BAC1] hover:text-[#D1D4D7] p-1.5 bg-[#404249] rounded-full">
+                    {/* Attachments Preview */}
+                    {pendingFiles.length > 0 && (
+                        <div className="flex gap-2 overflow-x-auto py-2 px-1 mb-2 bg-[#2b2d31] rounded-lg">
+                            {pendingFiles.map((item, index) => (
+                                <div key={index} className="relative group shrink-0 w-24 h-24 bg-[#1e1f22] rounded overflow-hidden border border-[#1e1f22]">
+                                    <img 
+                                        src={item.previewUrl} 
+                                        alt="attachment" 
+                                        className={cn(
+                                            "w-full h-full object-cover transition-all", 
+                                            item.isSpoiler ? "blur-sm brightness-50" : ""
+                                        )} 
+                                    />
+                                    
+                                    {/* Spoiler Label */}
+                                    {item.isSpoiler && (
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <span className="text-[10px] font-bold text-white bg-black/50 px-1.5 py-0.5 rounded">SPOILER</span>
+                                        </div>
+                                    )}
+
+                                    {/* Actions */}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-end p-1 gap-1">
+                                        <button 
+                                            onClick={() => removeAttachment(index)}
+                                            className="bg-[#ED4245] text-white p-1 rounded hover:bg-[#c03537] transition-colors shadow-sm"
+                                            title="删除图片"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                        <button 
+                                            onClick={() => toggleSpoiler(index)}
+                                            className={cn(
+                                                "p-1 rounded shadow-sm transition-colors mt-auto",
+                                                item.isSpoiler 
+                                                    ? "bg-[#5865F2] text-white" 
+                                                    : "bg-[#2B2D31] text-[#B5BAC1] hover:text-white"
+                                            )}
+                                            title={item.isSpoiler ? "取消剧透" : "标记为剧透"}
+                                        >
+                                            {item.isSpoiler ? <EyeOff size={14} /> : <Eye size={14} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <div 
+                        className="bg-[#383A40] rounded-lg p-2 flex items-center gap-2 shadow-inner"
+                        onPaste={handlePaste}
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                    >
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleFileSelect} 
+                            className="hidden" 
+                            accept="image/*"
+                        />
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-[#B5BAC1] bg-[#404249] p-1.5 rounded-full transition-all duration-200 hover:bg-[#D1D5D9] hover:text-[#383a40] hover:scale-110 cursor-pointer"
+                            title="上传图片"
+                        >
                             <Plus size={16} />
                         </button>
                         
                         {replyTo && (
                             <div className="flex items-center gap-1 bg-[#2f3136] px-2 py-0.5 rounded text-xs text-[#DBDEE1] whitespace-nowrap">
-                                <span>@{replyTo.nickname || replyTo.username}</span>
+                                <span>@{replyTo.user?.nickname || replyTo.user?.username || 'Unknown'}</span>
                                 <button onClick={() => setReplyTo(null)} className="hover:text-white"><X size={12} /></button>
                             </div>
                         )}
@@ -1061,13 +1473,13 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                             </div>
                         )}
 
-                        <input 
+                        <AutoResizeTextarea
                             ref={inputRef}
-                            type="text" 
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
                                     handleSendMessage(e);
                                 }
                                 if (e.key === 'Escape' && editingMessageId) {
@@ -1075,15 +1487,34 @@ export const PostThreadView: React.FC<PostThreadViewProps> = ({ channel, post, u
                                 }
                             }}
                             placeholder={editingMessageId ? "编辑消息..." : `回复帖子 #${post.title}`}
-                            className="bg-transparent flex-1 text-[#DBDEE1] placeholder-[#949BA4] outline-none text-sm font-medium"
+                            className="flex-1 text-sm font-medium min-h-[24px]"
+                            maxHeight="300px"
                         />
                         
-                        <button className="text-[#B5BAC1] hover:text-[#D1D4D7] p-1.5">
-                            <Smile size={20} />
-                        </button>
+                        <div className="relative">
+                            {showEmojiPicker && (
+                                <div className="absolute bottom-full right-0 mb-2 z-50 shadow-xl rounded-lg overflow-hidden" ref={emojiPickerRef}>
+                                    <EmojiPicker
+                                        theme={Theme.DARK}
+                                        emojiStyle={EmojiStyle.NATIVE}
+                                        onEmojiClick={(emojiData) => {
+                                            setInputText(prev => prev + emojiData.emoji);
+                                        }}
+                                    />
+                                </div>
+                            )}
+                            <button 
+                                ref={emojiButtonRef}
+                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                className="text-[#B5BAC1] hover:text-[#D1D4D7] p-1.5"
+                            >
+                                <Smile size={20} />
+                            </button>
+                        </div>
+
                         <button 
                             onClick={(e) => handleSendMessage(e)}
-                            disabled={!inputText.trim()} 
+                            disabled={!inputText.trim() && pendingFiles.length === 0} 
                             className="text-[#B5BAC1] hover:text-[#5865F2] p-1.5 disabled:opacity-50 transition-colors"
                         >
                             <Send size={20} />

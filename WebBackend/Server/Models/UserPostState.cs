@@ -15,6 +15,8 @@ namespace StoryOfTime.Server.Models
         [ForeignKey("PostId")]
         public Post? Post { get; set; }
 
+        public int LastReadMessageId { get; set; } = 0;
+
         public DateTime LastReadAt { get; set; } = DateTime.MinValue;
     }
 }
